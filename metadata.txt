@@ -1,0 +1,59 @@
+[general]
+name=Lookahead
+qgisMinimumVersion=3.16
+qgisMaximumVersion=4.99
+description=Plan, optimize, and simulate OBN source-line acquisition in QGIS with interactive sequence editing, directional turn control, and speed-aware timeline playback.
+version=2.1
+author=Tolegen
+email=aub.tolegen@gmail.com
+
+about=Lookahead is an advanced OBN source-line planning workspace for QGIS that helps teams build efficient sailing/acquisition sequences, optimize vessel maneuvers, and validate timing with speed-aware simulation tools.
+
+tracker=https://github.com/aubtolegen/lookahead-qgis/issues
+repository=https://github.com/aubtolegen/lookahead-qgis
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=no
+# Uncomment the following line and add your changelog:
+changelog=Changelog:
+    2.1
+    - Added Qt6 compatibility
+    2.0
+    - Redesigned Lookahead dock workflow and UX improvements
+    - Added SPS parsing tool for import
+    - Reviewed line status logic with expanded sequence editing
+    - Added line duplication and status removal
+    - Reviewed line list view and status texts
+    - Fixed Teardrop shooting mode (Dubins rule improved)
+    - Added Lookahead CSV plan import
+    - Run-In and Run-Out are now separate segments with configurable lengths
+    - Added different shooting speeds by direction
+    - RRT-based deviation lines are smoother now with separate layer export
+    - Reviewed sequence timing list and added speed and line-change times
+    - Added an individual turn editor with different turn modes and radii for specific turns
+    - Added acquisition calendar with simulation mode. Added vessel and marker times, measuring distances, follow mode.
+    - Added "How To" guidance and user messaging
+    - Numerous optimizations and overall UX enhancements
+
+# Tags are comma separated with spaces allowed
+tags=acquisition, source, survey, planning, lookahead, simulation, shooting
+
+homepage=https://github.com/aubtolegen/lookahead-qgis
+license=GPL-2.0
+category=Vector
+icon=icon.svg
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
+# Since QGIS 3.8, a comma separated list of plugins to be installed
+# (or upgraded) can be specified.
+# Check the documentation for more information.
+# plugin_dependencies=
+
+# If the plugin can run on QGIS Server.
+server=False

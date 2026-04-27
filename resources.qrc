@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/lookahead" >
+        <file>icon.svg</file>
+    </qresource>
+</RCC>
