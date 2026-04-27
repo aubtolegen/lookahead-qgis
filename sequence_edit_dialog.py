@@ -1,7 +1,6 @@
 import copy
 import math
 import os
-import subprocess
 import sys
 import threading
 import zipfile
@@ -3423,17 +3422,10 @@ def open_workbook_in_excel(file_path: str, *, maximize: bool = True) -> bool:
             return False
 
     try:
-        if sys.platform == "darwin":
-            subprocess.run(["open", path], check=False)
-        else:
-            subprocess.run(["xdg-open", path], check=False)
-        return True
+        from qgis.PyQt.QtGui import QDesktopServices
+        from qgis.PyQt.QtCore import QUrl
+
+        return QDesktopServices.openUrl(QUrl.fromLocalFile(path))
     except Exception as e:
         log.warning("Fallback open failed: %s", e)
-        try:
-            from qgis.PyQt.QtGui import QDesktopServices
-            from qgis.PyQt.QtCore import QUrl
-
-            return QDesktopServices.openUrl(QUrl.fromLocalFile(path))
-        except Exception:
-            return False
+        return False

@@ -1,13 +1,11 @@
 """In-dock HTML help (English default, Russian via lang://ru link)."""
 
-_HELP_LANG_LINK_STYLE = "color:#2563eb;text-decoration:underline;"
-
-LOOKAHEAD_HELP_HTML_EN = f"""
+LOOKAHEAD_HELP_HTML_EN = """
 <body style="font-family:Segoe UI,sans-serif; font-size:10pt; color:#222; background:#ffffff;">
 <p style="text-align:right;margin:0 0 10px 0;padding-bottom:6px;border-bottom:1px solid #ddd;">
   <span style="color:#555;">Language:</span>
   <b>English</b> &nbsp;|&nbsp;
-  <a href="lang://ru" style="{_HELP_LANG_LINK_STYLE}">Russian</a>
+  <a href="lang://ru" style="color:#2563eb;text-decoration:underline;">Russian</a>
 </p>
 
 <h2 style="margin-top:0;">Lookahead — quick guide</h2>
@@ -143,11 +141,11 @@ LOOKAHEAD_HELP_HTML_EN = f"""
 </body>
 """
 
-LOOKAHEAD_HELP_HTML_RU = f"""
+LOOKAHEAD_HELP_HTML_RU = """
 <body style="font-family:Segoe UI,sans-serif; font-size:10pt; color:#222; background:#ffffff;">
 <p style="text-align:right;margin:0 0 10px 0;padding-bottom:6px;border-bottom:1px solid #ddd;">
   <span style="color:#555;">Язык:</span>
-  <a href="lang://en" style="{_HELP_LANG_LINK_STYLE}">English</a>
+  <a href="lang://en" style="color:#2563eb;text-decoration:underline;">English</a>
   &nbsp;|&nbsp; <b>Русский</b>
 </p>
 

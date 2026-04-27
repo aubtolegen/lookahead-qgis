@@ -3,7 +3,7 @@ name=Lookahead
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Plan, optimize, and simulate OBN source-line acquisition in QGIS with interactive sequence editing, directional turn control, and speed-aware timeline playback.
-version=2.1
+version=2.2
 author=Tolegen
 email=aub.tolegen@gmail.com
 
@@ -18,6 +18,8 @@ repository=https://github.com/aubtolegen/lookahead-qgis
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
 changelog=Changelog:
+    2.2
+    - Security-scan compatibility fixes
     2.1
     - Added Qt6 compatibility
     2.0

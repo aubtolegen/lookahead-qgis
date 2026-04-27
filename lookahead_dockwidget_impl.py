@@ -1453,9 +1453,34 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                 elif host == "en":
                     br.setHtml(LOOKAHEAD_HELP_HTML_EN)
                 return
+            if not self._is_allowed_help_url(u):
+                log.warning("Blocked unsafe help URL: %s", u.toString())
+                return
             QDesktopServices.openUrl(u)
         except Exception as e:
             log.debug("help browser anchor: %s", e)
+
+    @staticmethod
+    def _is_allowed_help_url(url):
+        """Allow only explicit safe external links from help content."""
+        try:
+            u = QUrl(url) if not isinstance(url, QUrl) else url
+            scheme = (u.scheme() or "").lower()
+            if scheme not in ("https", "mailto"):
+                return False
+            if scheme == "mailto":
+                return True
+            host = (u.host() or "").lower()
+            allowed_hosts = {
+                "qgis.org",
+                "www.qgis.org",
+                "plugins.qgis.org",
+                "github.com",
+                "raw.githubusercontent.com",
+            }
+            return host in allowed_hosts
+        except Exception:
+            return False
 
     def _show_help_dialog_qt6(self, _url=None):
         try:
@@ -1485,6 +1510,9 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                         browser.setHtml(LOOKAHEAD_HELP_HTML_RU)
                     elif host == "en":
                         browser.setHtml(LOOKAHEAD_HELP_HTML_EN)
+                    return
+                if not self._is_allowed_help_url(u):
+                    log.warning("Blocked unsafe help URL: %s", u.toString())
                     return
                 QDesktopServices.openUrl(u)
 
