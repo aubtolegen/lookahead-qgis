@@ -2999,14 +2999,31 @@ class SequenceEditDialog(QDialog):
         """Layers shown on the Turn Editor canvas."""
         layers = []
         prj = QgsProject.instance()
+        root = prj.layerTreeRoot()
+
+        def _is_layer_visible_in_toc(lyr):
+            try:
+                node = root.findLayer(lyr.id()) if root is not None else None
+            except Exception:
+                node = None
+            if node is None:
+                return True
+            try:
+                return bool(node.isVisible())
+            except Exception:
+                try:
+                    return bool(node.itemVisibilityChecked())
+                except Exception:
+                    return True
+
         for name in ["Optimized_Path", "Generated_Survey_Lines", "Generated Run-In Run-Out"]:
             for lyr in prj.mapLayersByName(name):
-                if _vector_layer_alive(lyr):
+                if _vector_layer_alive(lyr) and _is_layer_visible_in_toc(lyr):
                     layers.append(lyr)
 
         params = self.recalculation_context.get("sim_params", {})
         nogo = params.get("nogo_layer")
-        if nogo and _vector_layer_alive(nogo) and nogo not in layers:
+        if nogo and _vector_layer_alive(nogo) and _is_layer_visible_in_toc(nogo) and nogo not in layers:
             layers.append(nogo)
         return layers
 
