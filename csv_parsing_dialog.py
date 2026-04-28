@@ -92,7 +92,8 @@ class CsvParsingDialog(QtWidgets.QDialog):
         start_dir = ""
         current = self.file_edit.text().strip()
         if current:
-            start_dir = current if os.path.isdir(current) else os.path.dirname(current)
+            start_dir = current if os.path.isdir(
+                current) else os.path.dirname(current)
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self,
             "Select CSV file",
@@ -113,7 +114,8 @@ class CsvParsingDialog(QtWidgets.QDialog):
     def accept(self):
         mapping = self.get_mapping()
         if not mapping.get("file_path"):
-            QMessageBox.warning(self, "CSV Import", "Please choose a CSV file.")
+            QMessageBox.warning(self, "CSV Import",
+                                "Please choose a CSV file.")
             return
         save_csv_mapping(mapping)
         super().accept()

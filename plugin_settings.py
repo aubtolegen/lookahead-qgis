@@ -114,7 +114,8 @@ def load_settings():
 
     dock = {}
     _merge_dock_stability(dock)
-    data = {"version": VERSION, "sps_parsing": sps, "csv_parsing": None, "dock": dock}
+    data = {"version": VERSION, "sps_parsing": sps,
+            "csv_parsing": None, "dock": dock}
     _save_to_qsettings(data)
     return data
 

@@ -100,7 +100,8 @@ class _NorthRoseWidget(QtWidgets.QWidget):
         self.setFixedSize(56, 56)
         self.setAttribute(_QT_WA_TRANSLUCENT_BACKGROUND, True)
         self.setAttribute(_QT_WA_TRANSPARENT_FOR_MOUSE_EVENTS, True)
-        self.setStyleSheet("background: rgba(255,255,255,210); border-radius: 28px;")
+        self.setStyleSheet(
+            "background: rgba(255,255,255,210); border-radius: 28px;")
 
     def paintEvent(self, _e):
         p = QtGui.QPainter(self)
@@ -133,7 +134,8 @@ class _NorthRoseWidget(QtWidgets.QWidget):
             f.setPointSize(8 if bold else 7)
             p.setFont(f)
             p.drawText(
-                QtCore.QRectF(tx - lab_half, ty - lab_half, 2 * lab_half, 2 * lab_half),
+                QtCore.QRectF(tx - lab_half, ty - lab_half,
+                              2 * lab_half, 2 * lab_half),
                 _QT_ALIGN_CENTER,
                 lbl,
             )
@@ -154,7 +156,8 @@ class _HorizontalScaleBarWidget(QtWidgets.QWidget):
         self.setFixedSize(self.BAR_W + self.MARGIN * 2 + 16, 42)
         self.setAttribute(_QT_WA_TRANSLUCENT_BACKGROUND, True)
         self.setAttribute(_QT_WA_TRANSPARENT_FOR_MOUSE_EVENTS, True)
-        self.setStyleSheet("background: rgba(255,255,255,215); border-radius: 4px;")
+        self.setStyleSheet(
+            "background: rgba(255,255,255,215); border-radius: 4px;")
 
     def _refresh_metrics(self):
         c = self._canvas
@@ -182,7 +185,7 @@ class _HorizontalScaleBarWidget(QtWidgets.QWidget):
         frac = d / max(d_full, 1e-30)
         self._draw_w = max(8.0, float(self.BAR_W) * min(1.0, frac))
         if d >= 1000.0:
-            self._label_txt = f"{d/1000.0:g} km"
+            self._label_txt = f"{d / 1000.0:g} km"
         else:
             self._label_txt = f"{d:g} m"
 
@@ -199,7 +202,8 @@ class _HorizontalScaleBarWidget(QtWidgets.QWidget):
         p.setPen(pen)
         p.drawLine(QtCore.QPointF(x0, ymid), QtCore.QPointF(x1, ymid))
         p.drawLine(QtCore.QPointF(x0, ymid - 5), QtCore.QPointF(x0, ymid + 5))
-        p.drawLine(QtCore.QPointF(x0 + bw / 2.0, ymid - 4), QtCore.QPointF(x0 + bw / 2.0, ymid + 4))
+        p.drawLine(QtCore.QPointF(x0 + bw / 2.0, ymid - 4),
+                   QtCore.QPointF(x0 + bw / 2.0, ymid + 4))
         p.drawLine(QtCore.QPointF(x1, ymid - 5), QtCore.QPointF(x1, ymid + 5))
         lf = QtGui.QFont()
         lf.setPointSize(8)

@@ -1,6 +1,6 @@
 from qgis.PyQt import QtWidgets
 from qgis.PyQt.QtCore import Qt, QRect, QSize
-from qgis.PyQt.QtGui import QFont, QPainter, QColor
+from qgis.PyQt.QtGui import QFont, QPainter
 
 from . import plugin_settings
 from .lookahead_messages import QMessageBox
@@ -70,7 +70,8 @@ class _CodeEditor(QtWidgets.QPlainTextEdit):
         if dy:
             self._line_number_area.scroll(0, dy)
         else:
-            self._line_number_area.update(0, rect.y(), self._line_number_area.width(), rect.height())
+            self._line_number_area.update(
+                0, rect.y(), self._line_number_area.width(), rect.height())
         if rect.contains(self.viewport().rect()):
             self._update_line_number_area_width(0)
 
@@ -89,7 +90,8 @@ class _CodeEditor(QtWidgets.QPlainTextEdit):
 
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
-        top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
+        top = int(self.blockBoundingGeometry(
+            block).translated(self.contentOffset()).top())
         bottom = top + int(self.blockBoundingRect(block).height())
         height = self.fontMetrics().height()
 
@@ -156,7 +158,11 @@ class SpsParsingDialog(QtWidgets.QDialog):
             btn = QtWidgets.QPushButton(title, self)
             lbl = QtWidgets.QLabel("-", self)
             lbl.setAlignment(_QT_ALIGN_CENTER)
-            btn.clicked.connect(lambda _, k=key, l=lbl: self._map_selection(k, l))
+            btn.clicked.connect(
+                lambda _, k=key, label_widget=lbl: self._map_selection(
+                    k, label_widget
+                )
+            )
             row = idx // 3
             col = (idx % 3) * 2
             grid.addWidget(btn, row, col)
@@ -196,7 +202,8 @@ class SpsParsingDialog(QtWidgets.QDialog):
         saved = load_saved_sps_mapping()
         if not saved:
             return
-        required = ("header_lines", "col_line", "col_sp", "col_easting", "col_northing")
+        required = ("header_lines", "col_line", "col_sp",
+                    "col_easting", "col_northing")
         if not all(k in saved for k in required):
             return
         for k in required:
@@ -221,7 +228,8 @@ class SpsParsingDialog(QtWidgets.QDialog):
         self._result.clear()
         for lbl in self.labels.values():
             lbl.setText("-")
-        QMessageBox.information(self, "Saved config", "Saved preplot mapping was cleared.")
+        QMessageBox.information(self, "Saved config",
+                                "Saved preplot mapping was cleared.")
 
     def _load_file(self):
         try:
@@ -229,7 +237,8 @@ class SpsParsingDialog(QtWidgets.QDialog):
                 self._lines = f.readlines()[:1200]
             self.editor.setPlainText("".join(self._lines))
         except Exception as e:
-            QMessageBox.critical(self, "Read Error", f"Could not read file:\n{e}")
+            QMessageBox.critical(self, "Read Error",
+                                 f"Could not read file:\n{e}")
 
     def _map_selection(self, key, label):
         cursor = self.editor.textCursor()
@@ -257,7 +266,8 @@ class SpsParsingDialog(QtWidgets.QDialog):
         return dict(self._result)
 
     def accept(self):
-        required = ("header_lines", "col_line", "col_sp", "col_easting", "col_northing")
+        required = ("header_lines", "col_line", "col_sp",
+                    "col_easting", "col_northing")
         missing = [k for k in required if k not in self._result]
         if missing:
             QMessageBox.warning(

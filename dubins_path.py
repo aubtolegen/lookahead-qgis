@@ -74,25 +74,26 @@ def split_angle(start, end, max_curve_angle):
     :return: list of angles
     """
     # Ensure max_curve_angle is positive and not too small
-    max_curve_angle = max(0.1, abs(max_curve_angle))  # Minimum value to prevent infinite loops
-    
+    # Minimum value to prevent infinite loops
+    max_curve_angle = max(0.1, abs(max_curve_angle))
+
     angles = [start]  # Always include the start angle
-    
+
     # Handle angle wrapping (when end < start)
     if end <= start:
         # We need to go through the 0/360 point
         end += 360.0
-    
+
     # Calculate intermediate angles
     current = start
     while current + max_curve_angle < end:
         current += max_curve_angle
         angles.append(current)
-    
+
     # Only add end angle if it's not already the last one
     if abs(angles[-1] - end) > 1e-6:  # Use small epsilon for float comparison
         angles.append(end)
-        
+
     return angles
 
 
@@ -117,56 +118,73 @@ def split_arc(center, theta1, theta2, radius, max_curve_angle, direction):
         if center is None or not isinstance(center, (list, tuple)) or len(center) < 2:
             print("ERROR in split_arc: Invalid center point")
             return []
-            
+
         # Ensure radius is positive and not too small
-        radius = max(0.001, abs(radius))  # Minimum radius to prevent calculation issues
-        
+        # Minimum radius to prevent calculation issues
+        radius = max(0.001, abs(radius))
+
         # Ensure max_curve_angle is positive and reasonable
-        max_curve_angle = max(0.1, abs(max_curve_angle))  # Minimum angle to prevent infinite loops
-        
+        # Minimum angle to prevent infinite loops
+        max_curve_angle = max(0.1, abs(max_curve_angle))
+
         # Handle equal angles case - return a single point
         if abs(theta1 - theta2) < 1e-6:  # Use small epsilon for float comparison
             p = theta1  # Just use theta1 since they're essentially equal
-            x_coord = round(center[0] + radius * math.cos(math.radians(p)), DECIMAL_ROUND)
-            y_coord = round(center[1] + radius * math.sin(math.radians(p)), DECIMAL_ROUND)
+            x_coord = round(
+                center[0] + radius * math.cos(math.radians(p)),
+                DECIMAL_ROUND,
+            )
+            y_coord = round(
+                center[1] + radius * math.sin(math.radians(p)),
+                DECIMAL_ROUND,
+            )
             try:
                 heading1, heading2 = tangent_angle(center, x_coord, y_coord)
                 return [[x_coord, y_coord, heading2 if direction == 'R' else heading1]]
             except Exception as e:
-                print(f"Warning in split_arc: Tangent angle calculation failed: {e}")
+                print(
+                    f"Warning in split_arc: Tangent angle calculation failed: {e}")
                 # Fallback: estimate heading directly from angle
                 heading = (p + (90 if direction == 'R' else 270)) % 360
                 return [[x_coord, y_coord, heading]]
-        
+
         # Get angle points with improved split_angle function
         points = split_angle(theta1, theta2, max_curve_angle)
         if not points:
             print("ERROR in split_arc: No angle points generated")
             return []
-            
+
         arc_points = []
         if direction == 'R':
             points.reverse()
-        
+
         # Process each point along the arc
         for p in points:
-            x_coord = round(center[0] + radius * math.cos(math.radians(p)), DECIMAL_ROUND)
-            y_coord = round(center[1] + radius * math.sin(math.radians(p)), DECIMAL_ROUND)
+            x_coord = round(
+                center[0] + radius * math.cos(math.radians(p)),
+                DECIMAL_ROUND,
+            )
+            y_coord = round(
+                center[1] + radius * math.sin(math.radians(p)),
+                DECIMAL_ROUND,
+            )
             try:
                 heading1, heading2 = tangent_angle(center, x_coord, y_coord)
-                arc_points.append([x_coord, y_coord, heading2 if direction == 'R' else heading1])
+                arc_points.append(
+                    [x_coord, y_coord, heading2 if direction == 'R' else heading1])
             except Exception as e:
-                print(f"Warning in split_arc: Tangent angle calculation failed for point {p}: {e}")
+                print(
+                    f"Warning in split_arc: Tangent angle calculation failed for point {p}: {e}")
                 # Fallback: estimate heading directly from angle
                 heading = (p + (90 if direction == 'R' else 270)) % 360
                 arc_points.append([x_coord, y_coord, heading])
-                
+
         # Remove first point only if there are multiple points
         if len(arc_points) > 1:
             arc_points.pop(0)  # First value already in the path
-            
+
         return arc_points
-        
+
     except Exception as e:
         print(f"ERROR in split_arc: {e}")
         # Return an empty list as fallback
@@ -195,7 +213,8 @@ def split_line(x_1, y_1, x_2, y_2, dividing_factor):
         return []
     elif count == 0:
         # parts.append([round(x_1, DECIMAL_ROUND), round(y_1, DECIMAL_ROUND), modified_angle])
-        parts.append([round(x_2, DECIMAL_ROUND), round(y_2, DECIMAL_ROUND), modified_angle])
+        parts.append([round(x_2, DECIMAL_ROUND), round(
+            y_2, DECIMAL_ROUND), modified_angle])
     else:
         step = dividing_factor / distance
         increment = step
@@ -204,9 +223,11 @@ def split_line(x_1, y_1, x_2, y_2, dividing_factor):
             y = (1 - increment) * y_1 + increment * y_2
             # angle = calculate_angle([prev_x, prev_y], [x, y])
             # modified_angle = (90 - angle) % 360
-            parts.append([round(x, DECIMAL_ROUND), round(y, DECIMAL_ROUND), modified_angle])
+            parts.append([round(x, DECIMAL_ROUND), round(
+                y, DECIMAL_ROUND), modified_angle])
             increment += step
-        parts.append([round(x_2, DECIMAL_ROUND), round(y_2, DECIMAL_ROUND), modified_angle])
+        parts.append([round(x_2, DECIMAL_ROUND), round(
+            y_2, DECIMAL_ROUND), modified_angle])
     # parts[0][2] = (90 - math.degrees(first_heading)) % 360
     return parts
 
@@ -221,7 +242,6 @@ def get_projection(start, end, solution):
     :param solution:solution provided by dubins function
     :type solution:tuple
     """
-    global PROJECTIONS
     projection_points = list()
     # print(start, end, solution)
     cur_pos = start
@@ -244,7 +264,8 @@ def get_projection(start, end, solution):
             theta1 = math.degrees(cur_pos[2]) - 90
             theta2 = theta1 + (180 * length / circumference)
 
-            parts = split_arc(center, theta1, theta2, radius, MAX_CURVE_ANGLE, 'L')
+            parts = split_arc(center, theta1, theta2,
+                              radius, MAX_CURVE_ANGLE, 'L')
 
             new_pos = (
                 center[0] + math.cos(math.radians(theta2)) * radius,
@@ -263,7 +284,8 @@ def get_projection(start, end, solution):
             theta1 = math.degrees(cur_pos[2]) - 90
             theta2 = theta1 + (180 * length / circumference)
 
-            parts = split_arc(center, theta1, theta2, radius, MAX_CURVE_ANGLE, 'l')
+            parts = split_arc(center, theta1, theta2,
+                              radius, MAX_CURVE_ANGLE, 'l')
 
             new_pos = (
                 center[0] + math.cos(math.radians(theta2)) * radius,
@@ -281,7 +303,8 @@ def get_projection(start, end, solution):
             theta2 = math.degrees(cur_pos[2]) + 90
             theta1 = theta2 - (180 * length / circumference)
 
-            parts = split_arc(center, theta1, theta2, radius, MAX_CURVE_ANGLE, 'R')
+            parts = split_arc(center, theta1, theta2,
+                              radius, MAX_CURVE_ANGLE, 'R')
 
             new_pos = (
                 center[0] + math.cos(math.radians(theta1)) * radius,
@@ -299,7 +322,8 @@ def get_projection(start, end, solution):
             theta1 = math.degrees(cur_pos[2]) + 90
             theta2 = theta1 + (180 * length / circumference)
 
-            parts = split_arc(center, theta1, theta2, radius, MAX_CURVE_ANGLE, 'r')
+            parts = split_arc(center, theta1, theta2,
+                              radius, MAX_CURVE_ANGLE, 'r')
 
             new_pos = (
                 center[0] + math.cos(math.radians(theta1)) * radius,
@@ -315,7 +339,8 @@ def get_projection(start, end, solution):
                 cur_pos[2],
             )
 
-            parts = split_line(cur_pos[0], cur_pos[1], new_pos[0], new_pos[1], MAX_LINE_DISTANCE)
+            parts = split_line(cur_pos[0], cur_pos[1],
+                               new_pos[0], new_pos[1], MAX_LINE_DISTANCE)
             # for part in parts:
             #     PROJECTIONS.append(part)
 
@@ -415,7 +440,7 @@ def dubins_path(start, end, radius, turn_mode=None, flip_sense=False):
     """
     Main entry function which finds the path using Dubins algorithm.
     Modified to prioritize specific turn types based on turn_mode.
-    
+
     :param start: start/first point (x, y, yaw_radians)
     :type start: tuple
     :param end: end/second point (x, y, yaw_radians)
@@ -436,7 +461,7 @@ def dubins_path(start, end, radius, turn_mode=None, flip_sense=False):
     lex = math.cos(s_yaw) * dx + math.sin(s_yaw) * dy
     ley = -math.sin(s_yaw) * dx + math.cos(s_yaw) * dy
     leyaw = e_yaw - s_yaw
-    
+
     dist_normalized = math.sqrt(lex ** 2.0 + ley ** 2.0) / c
 
     theta = mod2pi(math.atan2(ley, lex))
@@ -450,7 +475,7 @@ def dubins_path(start, end, radius, turn_mode=None, flip_sense=False):
         planners = ['LSR', 'RSL']
     elif turn_mode == "racetrack":
         planners = ['LSL', 'RSR', 'RLR', 'LRL']
-    else: # Default/unspecified mode: find the shortest of all possible paths
+    else:  # Default/unspecified mode: find the shortest of all possible paths
         planners = ['LSL', 'RSR', 'LSR', 'RSL', 'RLR', 'LRL']
 
     solutions = []
@@ -477,6 +502,7 @@ def dubins_path(start, end, radius, turn_mode=None, flip_sense=False):
     (t, p, q) = path
     return mode, [t * c, p * c, q * c], [c] * 3
 
+
 def get_curve(s_x, s_y, s_head, e_x, e_y, e_head, radius, max_line_distance, turn_mode=None, flip_sense=False):
     """
     Function calculates the curve path between two points.
@@ -501,13 +527,15 @@ def get_curve(s_x, s_y, s_head, e_x, e_y, e_head, radius, max_line_distance, tur
     global MAX_LINE_DISTANCE, MAX_CURVE_DISTANCE, MAX_CURVE_ANGLE
     MAX_LINE_DISTANCE = max_line_distance
     MAX_CURVE_DISTANCE = MAX_LINE_DISTANCE
-    MAX_CURVE_ANGLE = (MAX_CURVE_DISTANCE * 360) / (2 * math.pi * (float(radius)))
+    MAX_CURVE_ANGLE = (MAX_CURVE_DISTANCE * 360) / \
+        (2 * math.pi * (float(radius)))
 
     start = (s_x, s_y, math.radians(s_head))
     end = (e_x, e_y, math.radians(e_head))
 
     # Calculate the best solution or path to go from source to destination.
-    solution = dubins_path(start=start, end=end, radius=radius, turn_mode=turn_mode, flip_sense=flip_sense)
+    solution = dubins_path(start=start, end=end, radius=radius,
+                           turn_mode=turn_mode, flip_sense=flip_sense)
 
     if solution[0] is None:
         return []

@@ -38,13 +38,14 @@ _MARKER_COLORS = (
 
 class LookaheadSvgMarker(QgsMapCanvasItem):
     """Custom robust SVG marker to bypass external marker scaling/bounds issues."""
+
     def __init__(self, canvas, svg_path, length_m=0.0, width_m=0.0, size=35):
         super().__init__(canvas)
         from qgis.PyQt.QtSvg import QSvgRenderer
         self._canvas = canvas
         self.real_length_m = float(length_m) if length_m else 0.0
         self.real_width_m = float(width_m) if width_m else 0.0
-        
+
         raw_size = float(size) if size else 35.0
         self.fixed_size_px = 40.0 if raw_size > 100 else raw_size
         self.heading = 0.0
@@ -89,14 +90,14 @@ class LookaheadSvgMarker(QgsMapCanvasItem):
         if self.center_pt is None:
             self.setVisible(False)
             return
-            
+
         self.setVisible(True)
         pt = self.toCanvasCoordinates(self.center_pt)
-        
+
         mpp = self._canvas.mapSettings().mapUnitsPerPixel()
         new_l = self.fixed_size_px
         new_w = self.fixed_size_px
-        
+
         if mpp > 0:
             if self.real_length_m > 0 and self.real_width_m > 0:
                 new_l = self.real_length_m / mpp
@@ -104,13 +105,13 @@ class LookaheadSvgMarker(QgsMapCanvasItem):
             elif self.real_length_m > 0:
                 new_l = self.real_length_m / mpp
                 new_w = new_l
-                
+
             if self.real_width_m <= 0:
                 view_box = self.renderer.viewBoxF()
                 if not view_box.isEmpty() and view_box.height() > 0:
                     aspect = view_box.width() / view_box.height()
                     new_w = new_l * aspect
-                    
+
             min_px = 30.0
             if new_l < min_px and new_w < min_px:
                 major = max(new_l, new_w)
@@ -118,14 +119,14 @@ class LookaheadSvgMarker(QgsMapCanvasItem):
                     scale = min_px / major
                     new_l *= scale
                     new_w *= scale
-                    
+
         self.prepareGeometryChange()
         self.px_length = max(new_l, 2.0)
         self.px_width = max(new_w, 2.0)
-        
+
         diag = math.hypot(self.px_length, self.px_width)
         half_diag = diag / 2.0
-        
+
         self.setPos(pt.x() - half_diag, pt.y() - half_diag)
         self.update()
 
@@ -136,21 +137,24 @@ class LookaheadSvgMarker(QgsMapCanvasItem):
 
     def paint(self, painter, option, widget=None):
         from qgis.PyQt.QtCore import QRectF
-        from qgis.PyQt.QtGui import QPainter
         if not self.renderer.isValid():
             return
         painter.save()
         painter.setRenderHint(_QPAINTER_ANTIALIASING, True)
         painter.setRenderHint(_QPAINTER_SMOOTH_PIXMAP_TRANSFORM, True)
-        
+
         diag = math.hypot(self.px_length, self.px_width)
         half_diag = diag / 2.0
-        
+
         painter.translate(half_diag, half_diag)
         painter.rotate(self.heading)
-        
-            
-        rect = QRectF(-self.px_width / 2.0, -self.px_length / 2.0, self.px_width, self.px_length)
+
+        rect = QRectF(
+            -self.px_width / 2.0,
+            -self.px_length / 2.0,
+            self.px_width,
+            self.px_length,
+        )
         self.renderer.render(painter, rect)
         painter.restore()
 
@@ -315,7 +319,8 @@ def _wire_finalize_name_tag(canvas, tag: "FinalizePosiViewNameTag") -> None:
             connections.append((rot, _upd))
         except Exception:
             pass
-    tag._lookahead_name_tag_connections = connections  # type: ignore[attr-defined]
+    # type: ignore[attr-defined]
+    tag._lookahead_name_tag_connections = connections
 
 
 def _unwire_finalize_name_tag(tag: Optional["FinalizePosiViewNameTag"]) -> None:
@@ -426,7 +431,8 @@ def _transform_point_to_canvas(
             c_dest = QgsProject.instance().crs()
 
         if c_dest.isValid() and c_src.isValid() and c_dest.authid() != c_src.authid():
-            xform = QgsCoordinateTransform(c_src, c_dest, QgsProject.instance())
+            xform = QgsCoordinateTransform(
+                c_src, c_dest, QgsProject.instance())
             return xform.transform(pt)
     except Exception:
         return None
@@ -544,7 +550,7 @@ def _repair_clone_svg_renderer(pm, mob) -> None:
             pm.ShapeType = "SVG"
             pm.svgPath = path
             pm.SvgPath = path
-            
+
             if hasattr(pm, "updateSize"):
                 pm.updateSize()
     except Exception:
@@ -762,7 +768,7 @@ class PosiViewFinalizeOverlay:
         if existing is not None:
             self._dispose_marker(canvas, existing)
             store.pop(name, None)
-            
+
         params = _clone_marker_params(mob)
 
         # --- Direct SVG injection bypassing external marker clone path ---
@@ -770,7 +776,8 @@ class PosiViewFinalizeOverlay:
             svg_path = params.get("svgPath") or params.get("SvgPath")
             if svg_path:
                 try:
-                    rsv = getattr(getattr(mob, "marker", None), "resolveSvgPath", None)
+                    rsv = getattr(getattr(mob, "marker", None),
+                                  "resolveSvgPath", None)
                     if callable(rsv):
                         svg_path = rsv(svg_path) or svg_path
                 except Exception:
@@ -779,17 +786,20 @@ class PosiViewFinalizeOverlay:
             shape_type = str(params.get("type", "")).upper()
             if not shape_type:
                 shape_type = str(params.get("shapeType", "")).upper()
-                
+
             if shape_type == "SVG" and svg_path and os.path.isfile(svg_path):
                 l_m = 0.0
                 w_m = 0.0
                 try:
-                    l_m = float(params.get("shapeLength", params.get("length", 0)))
-                    w_m = float(params.get("shapeWidth", params.get("width", 0)))
+                    l_m = float(params.get("shapeLength",
+                                params.get("length", 0)))
+                    w_m = float(params.get(
+                        "shapeWidth", params.get("width", 0)))
                 except (ValueError, TypeError):
                     pass
-                    
-                sm = LookaheadSvgMarker(canvas, svg_path, length_m=l_m, width_m=w_m, size=params.get("size", 40))
+
+                sm = LookaheadSvgMarker(
+                    canvas, svg_path, length_m=l_m, width_m=w_m, size=params.get("size", 40))
                 sm._lookahead_sig = sig
                 try:
                     sm.setToolTip(getattr(mob, "name", name))
@@ -846,14 +856,15 @@ class PosiViewFinalizeOverlay:
             try:
                 if not getattr(mob, "enabled", True):
                     continue
-                    
+
                 # Ignore virtual compass markers from tracking plugin
                 # (Finalize canvases already provide their own compass rose).
                 n_lower = str(name).lower()
                 if "compass" in n_lower or "rose" in n_lower:
                     continue
                 try:
-                    svg_path = str(getattr(getattr(mob, "marker", None), "svgPath", "")).lower()
+                    svg_path = str(
+                        getattr(getattr(mob, "marker", None), "svgPath", "")).lower()
                     if "compass" in svg_path or "rose" in svg_path:
                         continue
                 except Exception:
@@ -907,7 +918,8 @@ class PosiViewFinalizeOverlay:
                             pm.hide()
                     self._ensure_name_tag(canvas, tags_store, name, None, None)
                     continue
-                pm = self._ensure_canvas_marker(canvas, store, name, mob, mi_idx)
+                pm = self._ensure_canvas_marker(
+                    canvas, store, name, mob, mi_idx)
                 self._apply_position(pm, xy, mob)
                 self._ensure_name_tag(canvas, tags_store, name, xy, mob)
 

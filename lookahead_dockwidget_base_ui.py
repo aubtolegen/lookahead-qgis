@@ -1,4 +1,4 @@
-from qgis.PyQt import QtCore, QtGui, QtWidgets
+from qgis.PyQt import QtCore, QtWidgets
 
 try:
     _QT_LEFT_TO_RIGHT = QtCore.Qt.LayoutDirection.LeftToRight
@@ -26,7 +26,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.importSpsButton = QtWidgets.QPushButton(self.dockWidgetContents)
         self.importSpsButton.setObjectName("importSpsButton")
         self.horizontalLayout_8.addWidget(self.importSpsButton)
-        self.calculateHeadingsButton = QtWidgets.QPushButton(self.dockWidgetContents)
+        self.calculateHeadingsButton = QtWidgets.QPushButton(
+            self.dockWidgetContents)
         self.calculateHeadingsButton.setObjectName("calculateHeadingsButton")
         self.horizontalLayout_8.addWidget(self.calculateHeadingsButton)
         self.verticalLayout.addLayout(self.horizontalLayout_8)
@@ -64,7 +65,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label_4 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_4.setObjectName("label_4")
         self.horizontalLayout_4.addWidget(self.label_4)
-        self.statusFilterComboBox = QtWidgets.QComboBox(self.dockWidgetContents)
+        self.statusFilterComboBox = QtWidgets.QComboBox(
+            self.dockWidgetContents)
         self.statusFilterComboBox.setObjectName("statusFilterComboBox")
         self.horizontalLayout_4.addWidget(self.statusFilterComboBox)
         self.verticalLayout.addLayout(self.horizontalLayout_4)
@@ -73,7 +75,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label_5 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_5.setObjectName("label_5")
         self.horizontalLayout_5.addWidget(self.label_5)
-        self.noGoZoneLayerComboBox = QtWidgets.QComboBox(self.dockWidgetContents)
+        self.noGoZoneLayerComboBox = QtWidgets.QComboBox(
+            self.dockWidgetContents)
         self.noGoZoneLayerComboBox.setObjectName("noGoZoneLayerComboBox")
         self.horizontalLayout_5.addWidget(self.noGoZoneLayerComboBox)
         self.verticalLayout.addLayout(self.horizontalLayout_5)
@@ -82,29 +85,38 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label_17 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_17.setObjectName("label_17")
         self.horizontalLayout_19.addWidget(self.label_17)
-        self.deviationClearanceDoubleSpinBox = QtWidgets.QDoubleSpinBox(self.dockWidgetContents)
+        self.deviationClearanceDoubleSpinBox = QtWidgets.QDoubleSpinBox(
+            self.dockWidgetContents)
         self.deviationClearanceDoubleSpinBox.setDecimals(0)
         self.deviationClearanceDoubleSpinBox.setMaximum(500.0)
         self.deviationClearanceDoubleSpinBox.setProperty("value", 80.0)
-        self.deviationClearanceDoubleSpinBox.setObjectName("deviationClearanceDoubleSpinBox")
-        self.horizontalLayout_19.addWidget(self.deviationClearanceDoubleSpinBox)
+        self.deviationClearanceDoubleSpinBox.setObjectName(
+            "deviationClearanceDoubleSpinBox")
+        self.horizontalLayout_19.addWidget(
+            self.deviationClearanceDoubleSpinBox)
         self.verticalLayout.addLayout(self.horizontalLayout_19)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.horizontalLayout_refresh_status = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_refresh_status.setObjectName("horizontalLayout_refresh_status")
+        self.horizontalLayout_refresh_status.setObjectName(
+            "horizontalLayout_refresh_status")
         self.applyFilterButton = QtWidgets.QPushButton(self.dockWidgetContents)
         self.applyFilterButton.setObjectName("applyFilterButton")
         self.horizontalLayout_refresh_status.addWidget(self.applyFilterButton)
-        self.removeStatusButton = QtWidgets.QPushButton(self.dockWidgetContents)
+        self.removeStatusButton = QtWidgets.QPushButton(
+            self.dockWidgetContents)
         self.removeStatusButton.setObjectName("removeStatusButton")
         self.horizontalLayout_refresh_status.addWidget(self.removeStatusButton)
-        self.resetSequencesButton = QtWidgets.QPushButton(self.dockWidgetContents)
+        self.resetSequencesButton = QtWidgets.QPushButton(
+            self.dockWidgetContents)
         self.resetSequencesButton.setObjectName("resetSequencesButton")
-        self.horizontalLayout_refresh_status.addWidget(self.resetSequencesButton)
-        self.duplicateLineButton = QtWidgets.QPushButton(self.dockWidgetContents)
+        self.horizontalLayout_refresh_status.addWidget(
+            self.resetSequencesButton)
+        self.duplicateLineButton = QtWidgets.QPushButton(
+            self.dockWidgetContents)
         self.duplicateLineButton.setObjectName("duplicateLineButton")
-        self.horizontalLayout_refresh_status.addWidget(self.duplicateLineButton)
+        self.horizontalLayout_refresh_status.addWidget(
+            self.duplicateLineButton)
         self.removeLineButton = QtWidgets.QPushButton(self.dockWidgetContents)
         self.removeLineButton.setObjectName("removeLineButton")
         self.horizontalLayout_refresh_status.addWidget(self.removeLineButton)
@@ -115,7 +127,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.verticalLayout_2)
         self.horizontalLayout_7 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_7.setObjectName("horizontalLayout_7")
-        self.markAcquiredButton = QtWidgets.QPushButton(self.dockWidgetContents)
+        self.markAcquiredButton = QtWidgets.QPushButton(
+            self.dockWidgetContents)
         self.markAcquiredButton.setObjectName("markAcquiredButton")
         self.horizontalLayout_7.addWidget(self.markAcquiredButton)
         self.markTbaButton = QtWidgets.QPushButton(self.dockWidgetContents)
@@ -127,11 +140,14 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_7)
         self.horizontalLayout_6 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
-        self.generateLinesButton = QtWidgets.QPushButton(self.dockWidgetContents)
+        self.generateLinesButton = QtWidgets.QPushButton(
+            self.dockWidgetContents)
         self.generateLinesButton.setObjectName("generateLinesButton")
         self.horizontalLayout_6.addWidget(self.generateLinesButton)
-        self.calculateDeviationsButton = QtWidgets.QPushButton(self.dockWidgetContents)
-        self.calculateDeviationsButton.setObjectName("calculateDeviationsButton")
+        self.calculateDeviationsButton = QtWidgets.QPushButton(
+            self.dockWidgetContents)
+        self.calculateDeviationsButton.setObjectName(
+            "calculateDeviationsButton")
         self.horizontalLayout_6.addWidget(self.calculateDeviationsButton)
         self.verticalLayout.addLayout(self.horizontalLayout_6)
         self.horizontalLayout_18 = QtWidgets.QHBoxLayout()
@@ -139,7 +155,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label_15 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_15.setObjectName("label_15")
         self.horizontalLayout_18.addWidget(self.label_15)
-        self.acquisitionModeComboBox = QtWidgets.QComboBox(self.dockWidgetContents)
+        self.acquisitionModeComboBox = QtWidgets.QComboBox(
+            self.dockWidgetContents)
         self.acquisitionModeComboBox.setObjectName("acquisitionModeComboBox")
         self.acquisitionModeComboBox.addItem("")
         self.acquisitionModeComboBox.addItem("")
@@ -150,14 +167,16 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label_7 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_7.setObjectName("label_7")
         self.horizontalLayout_10.addWidget(self.label_7)
-        self.maxRunInDoubleSpinBox = QtWidgets.QDoubleSpinBox(self.dockWidgetContents)
+        self.maxRunInDoubleSpinBox = QtWidgets.QDoubleSpinBox(
+            self.dockWidgetContents)
         self.maxRunInDoubleSpinBox.setDecimals(0)
         self.maxRunInDoubleSpinBox.setMaximum(100000.0)
         self.maxRunInDoubleSpinBox.setSingleStep(50.0)
         self.maxRunInDoubleSpinBox.setProperty("value", 500.0)
         self.maxRunInDoubleSpinBox.setObjectName("maxRunInDoubleSpinBox")
         self.horizontalLayout_10.addWidget(self.maxRunInDoubleSpinBox)
-        self.runOutDoubleSpinBox = QtWidgets.QDoubleSpinBox(self.dockWidgetContents)
+        self.runOutDoubleSpinBox = QtWidgets.QDoubleSpinBox(
+            self.dockWidgetContents)
         self.runOutDoubleSpinBox.setDecimals(0)
         self.runOutDoubleSpinBox.setMaximum(100000.0)
         self.runOutDoubleSpinBox.setSingleStep(50.0)
@@ -171,7 +190,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label_9.setObjectName("label_9")
         self.label_9.setAlignment(_QT_ALIGN_LEADING | _QT_ALIGN_VCENTER)
         self.horizontalLayout_12.addWidget(self.label_9)
-        self.turnRadiusDoubleSpinBox = QtWidgets.QDoubleSpinBox(self.dockWidgetContents)
+        self.turnRadiusDoubleSpinBox = QtWidgets.QDoubleSpinBox(
+            self.dockWidgetContents)
         self.turnRadiusDoubleSpinBox.setDecimals(0)
         self.turnRadiusDoubleSpinBox.setMinimum(500.0)
         self.turnRadiusDoubleSpinBox.setMaximum(3500.0)
@@ -179,11 +199,13 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.turnRadiusDoubleSpinBox.setProperty("value", 1400.0)
         self.turnRadiusDoubleSpinBox.setObjectName("turnRadiusDoubleSpinBox")
         self.horizontalLayout_12.addWidget(self.turnRadiusDoubleSpinBox)
-        self.vesselTurnRateDoubleSpinBox = QtWidgets.QDoubleSpinBox(self.dockWidgetContents)
+        self.vesselTurnRateDoubleSpinBox = QtWidgets.QDoubleSpinBox(
+            self.dockWidgetContents)
         self.vesselTurnRateDoubleSpinBox.setDecimals(0)
         self.vesselTurnRateDoubleSpinBox.setMaximum(360.0)
         self.vesselTurnRateDoubleSpinBox.setProperty("value", 30.0)
-        self.vesselTurnRateDoubleSpinBox.setObjectName("vesselTurnRateDoubleSpinBox")
+        self.vesselTurnRateDoubleSpinBox.setObjectName(
+            "vesselTurnRateDoubleSpinBox")
         self.horizontalLayout_12.addWidget(self.vesselTurnRateDoubleSpinBox)
         self.verticalLayout.addLayout(self.horizontalLayout_12)
         self.horizontalLayout_13 = QtWidgets.QHBoxLayout()
@@ -209,7 +231,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label_11 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_11.setObjectName("label_11")
         self.horizontalLayout_14.addWidget(self.label_11)
-        self.firstHeadingComboBox = QtWidgets.QComboBox(self.dockWidgetContents)
+        self.firstHeadingComboBox = QtWidgets.QComboBox(
+            self.dockWidgetContents)
         self.firstHeadingComboBox.setObjectName("firstHeadingComboBox")
         self.firstHeadingComboBox.addItem("")
         self.firstHeadingComboBox.addItem("")
@@ -221,15 +244,18 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label_12.setObjectName("label_12")
         self.label_12.setAlignment(_QT_ALIGN_LEADING | _QT_ALIGN_VCENTER)
         self.horizontalLayout_15.addWidget(self.label_12)
-        self.acqSpeedPrimaryDoubleSpinBox = QtWidgets.QDoubleSpinBox(self.dockWidgetContents)
+        self.acqSpeedPrimaryDoubleSpinBox = QtWidgets.QDoubleSpinBox(
+            self.dockWidgetContents)
         self.acqSpeedPrimaryDoubleSpinBox.setDecimals(1)
         self.acqSpeedPrimaryDoubleSpinBox.setMinimum(3.0)
         self.acqSpeedPrimaryDoubleSpinBox.setMaximum(7.0)
         self.acqSpeedPrimaryDoubleSpinBox.setSingleStep(0.1)
         self.acqSpeedPrimaryDoubleSpinBox.setProperty("value", 4.2)
-        self.acqSpeedPrimaryDoubleSpinBox.setObjectName("acqSpeedPrimaryDoubleSpinBox")
+        self.acqSpeedPrimaryDoubleSpinBox.setObjectName(
+            "acqSpeedPrimaryDoubleSpinBox")
         self.horizontalLayout_15.addWidget(self.acqSpeedPrimaryDoubleSpinBox)
-        self.turnSpeedDoubleSpinBox = QtWidgets.QDoubleSpinBox(self.dockWidgetContents)
+        self.turnSpeedDoubleSpinBox = QtWidgets.QDoubleSpinBox(
+            self.dockWidgetContents)
         self.turnSpeedDoubleSpinBox.setDecimals(1)
         self.turnSpeedDoubleSpinBox.setMinimum(3.0)
         self.turnSpeedDoubleSpinBox.setMaximum(7.0)
@@ -243,8 +269,10 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label_14 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_14.setObjectName("label_14")
         self.horizontalLayout_17.addWidget(self.label_14)
-        self.startDateTimeEdit = QtWidgets.QDateTimeEdit(self.dockWidgetContents)
-        self.startDateTimeEdit.setDateTime(QtCore.QDateTime(QtCore.QDate(2025, 1, 1), QtCore.QTime(0, 0, 0)))
+        self.startDateTimeEdit = QtWidgets.QDateTimeEdit(
+            self.dockWidgetContents)
+        self.startDateTimeEdit.setDateTime(QtCore.QDateTime(
+            QtCore.QDate(2025, 1, 1), QtCore.QTime(0, 0, 0)))
         self.startDateTimeEdit.setCalendarPopup(True)
         self.startDateTimeEdit.setObjectName("startDateTimeEdit")
         # Narrow docks clip yyyy-MM-dd HH:mm so only minutes look editable — keep full width.
@@ -254,11 +282,14 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.horizontalLayout_17.setStretch(1, 1)
         self.verticalLayout.addLayout(self.horizontalLayout_17)
         self.horizontalLayout_finalize = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_finalize.setObjectName("horizontalLayout_finalize")
-        self.runSimulationButton = QtWidgets.QPushButton(self.dockWidgetContents)
+        self.horizontalLayout_finalize.setObjectName(
+            "horizontalLayout_finalize")
+        self.runSimulationButton = QtWidgets.QPushButton(
+            self.dockWidgetContents)
         self.runSimulationButton.setObjectName("runSimulationButton")
         self.horizontalLayout_finalize.addWidget(self.runSimulationButton)
-        self.editFinalizeButton = QtWidgets.QPushButton(self.dockWidgetContents)
+        self.editFinalizeButton = QtWidgets.QPushButton(
+            self.dockWidgetContents)
         self.editFinalizeButton.setObjectName("editFinalizeButton")
         self.horizontalLayout_finalize.addWidget(self.editFinalizeButton)
         self.verticalLayout.addLayout(self.horizontalLayout_finalize)
@@ -269,42 +300,80 @@ class Ui_OBNPlannerDockWidgetBase(object):
 
     def retranslateUi(self, OBNPlannerDockWidgetBase):
         _translate = QtCore.QCoreApplication.translate
-        OBNPlannerDockWidgetBase.setWindowTitle(_translate("OBNPlannerDockWidgetBase", "Lookahead"))
-        self.importSpsButton.setText(_translate("OBNPlannerDockWidgetBase", "Import SPS File..."))
-        self.calculateHeadingsButton.setText(_translate("OBNPlannerDockWidgetBase", "Calculate Headings"))
-        self.label.setText(_translate("OBNPlannerDockWidgetBase", "Sail Lines Layer (*.gpkg):"))
-        self.label_2.setText(_translate("OBNPlannerDockWidgetBase", "Min & Max Lines"))
+        OBNPlannerDockWidgetBase.setWindowTitle(
+            _translate("OBNPlannerDockWidgetBase", "Lookahead"))
+        self.importSpsButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Import SPS File..."))
+        self.calculateHeadingsButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Calculate Headings"))
+        self.label.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Sail Lines Layer (*.gpkg):"))
+        self.label_2.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Min & Max Lines"))
         self.label_4.setText(_translate("OBNPlannerDockWidgetBase", "Status"))
-        self.label_5.setText(_translate("OBNPlannerDockWidgetBase", "No-Go Zone Layer:"))
-        self.label_17.setText(_translate("OBNPlannerDockWidgetBase", "Deviation Clearance"))
-        self.deviationClearanceDoubleSpinBox.setSuffix(_translate("OBNPlannerDockWidgetBase", " m"))
-        self.applyFilterButton.setText(_translate("OBNPlannerDockWidgetBase", "Refresh List"))
-        self.removeStatusButton.setText(_translate("OBNPlannerDockWidgetBase", "Remove Status"))
-        self.resetSequencesButton.setText(_translate("OBNPlannerDockWidgetBase", "Reset Sequences"))
-        self.duplicateLineButton.setText(_translate("OBNPlannerDockWidgetBase", "Duplicate Line"))
-        self.removeLineButton.setText(_translate("OBNPlannerDockWidgetBase", "Remove Line"))
-        self.markAcquiredButton.setText(_translate("OBNPlannerDockWidgetBase", "Acquired"))
-        self.markTbaButton.setText(_translate("OBNPlannerDockWidgetBase", "To Be Acquired"))
-        self.markPendingButton.setText(_translate("OBNPlannerDockWidgetBase", "Pending"))
-        self.generateLinesButton.setText(_translate("OBNPlannerDockWidgetBase", "Generate Lookahead Lines"))
-        self.calculateDeviationsButton.setText(_translate("OBNPlannerDockWidgetBase", "Generate Deviation Lines"))
-        self.label_15.setText(_translate("OBNPlannerDockWidgetBase", "Turn Mode"))
-        self.acquisitionModeComboBox.setItemText(0, _translate("OBNPlannerDockWidgetBase", "Racetrack (Default)"))
-        self.acquisitionModeComboBox.setItemText(1, _translate("OBNPlannerDockWidgetBase", "Teardrop"))
-        self.label_7.setText(_translate("OBNPlannerDockWidgetBase", "Run-In & Run-Out (m):"))
-        self.maxRunInDoubleSpinBox.setSuffix(_translate("OBNPlannerDockWidgetBase", " m"))
-        self.runOutDoubleSpinBox.setSuffix(_translate("OBNPlannerDockWidgetBase", " m"))
-        self.label_9.setText(_translate("OBNPlannerDockWidgetBase", "Turn Radius & Rate of Turn"))
-        self.turnRadiusDoubleSpinBox.setSuffix(_translate("OBNPlannerDockWidgetBase", " m"))
-        self.vesselTurnRateDoubleSpinBox.setSuffix(_translate("OBNPlannerDockWidgetBase", " deg"))
-        self.label_10.setText(_translate("OBNPlannerDockWidgetBase", "First Line & First Seq:"))
-        self.label_11.setText(_translate("OBNPlannerDockWidgetBase", "First Line Heading:"))
-        self.firstHeadingComboBox.setItemText(0, _translate("OBNPlannerDockWidgetBase", "Low to High SP (Default)"))
-        self.firstHeadingComboBox.setItemText(1, _translate("OBNPlannerDockWidgetBase", "High to Low SP (Reciprocal)"))
-        self.label_12.setText(_translate("OBNPlannerDockWidgetBase", "Low→High"))
-        self.acqSpeedPrimaryDoubleSpinBox.setSuffix(_translate("OBNPlannerDockWidgetBase", " knots"))
-        self.turnSpeedDoubleSpinBox.setSuffix(_translate("OBNPlannerDockWidgetBase", " knots"))
-        self.label_14.setText(_translate("OBNPlannerDockWidgetBase", "Start Time"))
-        self.startDateTimeEdit.setDisplayFormat(_translate("OBNPlannerDockWidgetBase", "yyyy-MM-dd HH:mm"))
-        self.runSimulationButton.setText(_translate("OBNPlannerDockWidgetBase", "Run Simulation"))
-        self.editFinalizeButton.setText(_translate("OBNPlannerDockWidgetBase", "Finalize Lookahead Plan"))
+        self.label_5.setText(_translate(
+            "OBNPlannerDockWidgetBase", "No-Go Zone Layer:"))
+        self.label_17.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Deviation Clearance"))
+        self.deviationClearanceDoubleSpinBox.setSuffix(
+            _translate("OBNPlannerDockWidgetBase", " m"))
+        self.applyFilterButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Refresh List"))
+        self.removeStatusButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Remove Status"))
+        self.resetSequencesButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Reset Sequences"))
+        self.duplicateLineButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Duplicate Line"))
+        self.removeLineButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Remove Line"))
+        self.markAcquiredButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Acquired"))
+        self.markTbaButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "To Be Acquired"))
+        self.markPendingButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Pending"))
+        self.generateLinesButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Generate Lookahead Lines"))
+        self.calculateDeviationsButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Generate Deviation Lines"))
+        self.label_15.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Turn Mode"))
+        self.acquisitionModeComboBox.setItemText(0, _translate(
+            "OBNPlannerDockWidgetBase", "Racetrack (Default)"))
+        self.acquisitionModeComboBox.setItemText(
+            1, _translate("OBNPlannerDockWidgetBase", "Teardrop"))
+        self.label_7.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Run-In & Run-Out (m):"))
+        self.maxRunInDoubleSpinBox.setSuffix(
+            _translate("OBNPlannerDockWidgetBase", " m"))
+        self.runOutDoubleSpinBox.setSuffix(
+            _translate("OBNPlannerDockWidgetBase", " m"))
+        self.label_9.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Turn Radius & Rate of Turn"))
+        self.turnRadiusDoubleSpinBox.setSuffix(
+            _translate("OBNPlannerDockWidgetBase", " m"))
+        self.vesselTurnRateDoubleSpinBox.setSuffix(
+            _translate("OBNPlannerDockWidgetBase", " deg"))
+        self.label_10.setText(_translate(
+            "OBNPlannerDockWidgetBase", "First Line & First Seq:"))
+        self.label_11.setText(_translate(
+            "OBNPlannerDockWidgetBase", "First Line Heading:"))
+        self.firstHeadingComboBox.setItemText(0, _translate(
+            "OBNPlannerDockWidgetBase", "Low to High SP (Default)"))
+        self.firstHeadingComboBox.setItemText(1, _translate(
+            "OBNPlannerDockWidgetBase", "High to Low SP (Reciprocal)"))
+        self.label_12.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Low→High"))
+        self.acqSpeedPrimaryDoubleSpinBox.setSuffix(
+            _translate("OBNPlannerDockWidgetBase", " knots"))
+        self.turnSpeedDoubleSpinBox.setSuffix(
+            _translate("OBNPlannerDockWidgetBase", " knots"))
+        self.label_14.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Start Time"))
+        self.startDateTimeEdit.setDisplayFormat(_translate(
+            "OBNPlannerDockWidgetBase", "yyyy-MM-dd HH:mm"))
+        self.runSimulationButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Run Simulation"))
+        self.editFinalizeButton.setText(_translate(
+            "OBNPlannerDockWidgetBase", "Finalize Lookahead Plan"))

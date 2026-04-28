@@ -1,4 +1,5 @@
-TURN_SEGMENT_TYPES = {"RunIn", "RunOut", "Turn", "Turn_Teardrop", "Turn_Racetrack"}
+TURN_SEGMENT_TYPES = {"RunIn", "RunOut",
+                      "Turn", "Turn_Teardrop", "Turn_Racetrack"}
 
 
 def optimized_path_field_specs():

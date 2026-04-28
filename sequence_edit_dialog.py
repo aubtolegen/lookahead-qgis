@@ -1,7 +1,6 @@
 import copy
 import math
 import os
-import sys
 import threading
 import zipfile
 from datetime import datetime, timedelta
@@ -11,9 +10,7 @@ from xml.sax.saxutils import escape
 from qgis.core import (
     QgsDistanceArea,
     QgsFeature,
-    QgsFeatureRequest,
     QgsGeometry,
-    QgsMapLayer,
     QgsPalLayerSettings,
     QgsPoint,
     QgsPointXY,
@@ -25,21 +22,19 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
-from qgis.PyQt import QtCore, QtGui, QtWidgets
+from qgis.PyQt import QtCore, QtWidgets
 from qgis.gui import (
     QgsMapCanvas,
     QgsMapTool,
-    QgsMapToolPan,
-    QgsMapToolZoom,
     QgsRubberBand,
     QgsVertexMarker,
 )
-from qgis.PyQt.QtCore import Qt, QDateTime
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QTableWidget, QTableWidgetItem, QAbstractItemView,
-                             QLabel, QHeaderView, QComboBox,
-                             QSizePolicy, QApplication, QFileDialog, QDoubleSpinBox,
-                             QSlider, QMenu, QWidgetAction, QCheckBox, QShortcut)
+                                 QTableWidget, QTableWidgetItem, QAbstractItemView,
+                                 QLabel, QHeaderView, QComboBox,
+                                 QSizePolicy, QApplication, QFileDialog, QDoubleSpinBox,
+                                 QSlider, QMenu, QCheckBox, QShortcut)
 
 from .finalize_map_canvas_host import FinalizeMapCanvasHost
 from .lookahead_messages import QMessageBox
@@ -196,8 +191,7 @@ def write_xlsx_stdlib(file_path, sheet_name, headers, data_rows):
         '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
         'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
         "<sheetData>"
-        + "".join(rows_xml)
-        + "</sheetData></worksheet>"
+        f"{''.join(rows_xml)}</sheetData></worksheet>"
     )
 
     content_types = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -235,7 +229,7 @@ def write_xlsx_stdlib(file_path, sheet_name, headers, data_rows):
 
 
 # --- Define constants for column indices ---
-COL_SEQ_NUM = 0 # New
+COL_SEQ_NUM = 0  # New
 COL_LINE_NUM = 1
 COL_START_SP = 2
 COL_END_SP = 3
@@ -316,7 +310,7 @@ def custom_deepcopy(obj, memo=None):
         return memo[obj_id]
 
     if isinstance(obj, QgsGeometry):
-        new_geom = QgsGeometry(obj) # Use copy constructor
+        new_geom = QgsGeometry(obj)  # Use copy constructor
         memo[obj_id] = new_geom
         return new_geom
     elif isinstance(obj, QgsPointXY):
@@ -331,7 +325,7 @@ def custom_deepcopy(obj, memo=None):
         new_dict = {}
         memo[obj_id] = new_dict
         for k, v in obj.items():
-             new_dict[custom_deepcopy(k, memo)] = custom_deepcopy(v, memo)
+            new_dict[custom_deepcopy(k, memo)] = custom_deepcopy(v, memo)
         return new_dict
     elif isinstance(obj, list):
         new_list = []
@@ -340,10 +334,10 @@ def custom_deepcopy(obj, memo=None):
             new_list.append(custom_deepcopy(item, memo))
         return new_list
     elif isinstance(obj, tuple):
-         new_tuple_elements = [custom_deepcopy(item, memo) for item in obj]
-         new_tuple = tuple(new_tuple_elements)
-         memo[obj_id] = new_tuple # Cache the tuple itself
-         return new_tuple
+        new_tuple_elements = [custom_deepcopy(item, memo) for item in obj]
+        new_tuple = tuple(new_tuple_elements)
+        memo[obj_id] = new_tuple  # Cache the tuple itself
+        return new_tuple
     else:
         # Use standard deepcopy for other types, but be careful
         try:
@@ -357,6 +351,7 @@ def custom_deepcopy(obj, memo=None):
             return obj
 # --- END ENHANCED custom_deepcopy ---
 
+
 def _vector_layer_alive(lyr):
     """True if lyr is a valid QgsVectorLayer C++ wrapper (not deleted after project refresh)."""
     if lyr is None:
@@ -365,6 +360,7 @@ def _vector_layer_alive(lyr):
         return isinstance(lyr, QgsVectorLayer) and lyr.isValid()
     except RuntimeError:
         return False
+
 
 def _parent_canvas_color_or_default(widget, default_color):
     """Best-effort parent iface canvas color for embedded map canvases."""
@@ -383,6 +379,7 @@ def _parent_canvas_color_or_default(widget, default_color):
 
 class TurnMapTool(QgsMapTool):
     """Map tool for selecting turns and dragging the blue detour circle."""
+
     def __init__(self, canvas, click_callback, press_callback=None, move_callback=None, release_callback=None):
         super().__init__(canvas)
         self.canvas = canvas
@@ -420,6 +417,7 @@ class TurnMapTool(QgsMapTool):
 
 class AcquisitionCalendarMapTool(QgsMapTool):
     """Map tool for hover and click inspection on the acquisition timeline."""
+
     def __init__(
         self,
         canvas,
@@ -465,6 +463,7 @@ class AcquisitionCalendarMapTool(QgsMapTool):
             if callable(self.ruler_release_callback):
                 self.ruler_release_callback(self.toMapCoordinates(e.pos()))
 
+
 class SequenceEditDialog(QDialog):
     """ Dialog for viewing, editing sequence, directions, and timing. """
 
@@ -480,23 +479,29 @@ class SequenceEditDialog(QDialog):
         self.current_sequence_info = custom_deepcopy(initial_sequence_info)
 
         # --- ADD DEBUG LOG ---
-        log.debug(f"[SequenceEditDialog.__init__] Received initial sequence info:")
+        log.debug(
+            "[SequenceEditDialog.__init__] Received initial sequence info:")
         log.debug(f"  Sequence: {self.current_sequence_info.get('seq')}")
         log.debug(f"  State: {self.current_sequence_info.get('state')}")
-        log.debug(f"  Directions from state: {self.current_sequence_info.get('state', {}).get('line_directions')}")
+        log.debug(
+            f"  Directions from state: {self.current_sequence_info.get('state', {}).get('line_directions')}")
         # --- END DEBUG LOG ---
-        
-        self.recalculation_context = recalculation_context # Dict with params, data, layers, cache, methods
-        self.recalculation_callback = recalculation_callback # Callback to update main widget's cost/state
+
+        # Dict with params, data, layers, cache, methods
+        self.recalculation_context = recalculation_context
+        # Callback to update main widget's cost/state
+        self.recalculation_callback = recalculation_callback
 
         # --- Get Start Sequence Number (Requirement 3) ---
         try:
-            self.start_seq_num = int(self.recalculation_context.get("sim_params", {}).get("start_sequence_number", 1))
+            self.start_seq_num = int(self.recalculation_context.get(
+                "sim_params", {}).get("start_sequence_number", 1))
         except (ValueError, TypeError):
-            log.warning("Could not parse start_sequence_number from context, defaulting to 1.")
+            log.warning(
+                "Could not parse start_sequence_number from context, defaulting to 1.")
             self.start_seq_num = 1
-        log.debug(f"SequenceEditDialog using start sequence number: {self.start_seq_num}")
-
+        log.debug(
+            f"SequenceEditDialog using start sequence number: {self.start_seq_num}")
 
         # Full segment: start/end include run-in & run-out. Table shows production (shooting) only.
         self.segment_timings = {}
@@ -523,19 +528,30 @@ class SequenceEditDialog(QDialog):
         self.tableWidget = QTableWidget()
         # --- MODIFIED: Column count and headers (Requirement 3) ---
         self.tableWidget.setColumnCount(len(SEQUENCE_EDITOR_TABLE_HEADERS))
-        self.tableWidget.setHorizontalHeaderLabels(_sequence_editor_header_list())
+        self.tableWidget.setHorizontalHeaderLabels(
+            _sequence_editor_header_list())
 
         # Adjust column widths (Updated indices - Requirement 3)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_SEQ_NUM, _QT_HEADER_RESIZE_TO_CONTENTS) # New
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_LINE_NUM, _QT_HEADER_RESIZE_TO_CONTENTS)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_START_SP, _QT_HEADER_RESIZE_TO_CONTENTS)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_END_SP, _QT_HEADER_RESIZE_TO_CONTENTS)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_START_TIME, _QT_HEADER_STRETCH)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_END_TIME, _QT_HEADER_STRETCH)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_DURATION, _QT_HEADER_RESIZE_TO_CONTENTS)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_SPEED, _QT_HEADER_RESIZE_TO_CONTENTS)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_DIRECTION, _QT_HEADER_RESIZE_TO_CONTENTS)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(COL_LINE_CHANGE, _QT_HEADER_RESIZE_TO_CONTENTS)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_SEQ_NUM, _QT_HEADER_RESIZE_TO_CONTENTS)  # New
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_LINE_NUM, _QT_HEADER_RESIZE_TO_CONTENTS)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_START_SP, _QT_HEADER_RESIZE_TO_CONTENTS)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_END_SP, _QT_HEADER_RESIZE_TO_CONTENTS)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_START_TIME, _QT_HEADER_STRETCH)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_END_TIME, _QT_HEADER_STRETCH)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_DURATION, _QT_HEADER_RESIZE_TO_CONTENTS)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_SPEED, _QT_HEADER_RESIZE_TO_CONTENTS)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_DIRECTION, _QT_HEADER_RESIZE_TO_CONTENTS)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            COL_LINE_CHANGE, _QT_HEADER_RESIZE_TO_CONTENTS)
 
         self.tableWidget.setSelectionBehavior(_QAIV_SELECT_ROWS)
         self.tableWidget.setSelectionMode(_QAIV_SINGLE_SELECTION)
@@ -553,7 +569,8 @@ class SequenceEditDialog(QDialog):
         self.moveButtonLayout.addWidget(self.upButton)
         self.moveButtonLayout.addWidget(self.downButton)
         self.moveButtonLayout.addStretch()
-        self.bottomControlLayout.addLayout(self.moveButtonLayout) # Add move buttons to bottom layout
+        # Add move buttons to bottom layout
+        self.bottomControlLayout.addLayout(self.moveButtonLayout)
 
         # Copy / Export buttons
         self.copyButton = QPushButton("Copy to Clipboard")
@@ -561,16 +578,19 @@ class SequenceEditDialog(QDialog):
 
         # Export Button (Requirement 4)
         self.exportButton = QPushButton("Export XLSX")
-        self.bottomControlLayout.addWidget(self.exportButton) # Add export button
+        self.bottomControlLayout.addWidget(
+            self.exportButton)  # Add export button
 
-        self.seq_layout.addLayout(self.bottomControlLayout) # Add the combined bottom layout
+        # Add the combined bottom layout
+        self.seq_layout.addLayout(self.bottomControlLayout)
 
         # Info Labels (Line-only + Total)
         self.lineTimeLabel = QLabel("Estimated Line Time: --- hours")
         self.lineTimeLabel.setSizePolicy(_QSP_EXPANDING, _QSP_PREFERRED)
         self.seq_layout.addWidget(self.lineTimeLabel)
 
-        self.lineChangeTimeLabel = QLabel("Estimated Line Change Time: --- hours")
+        self.lineChangeTimeLabel = QLabel(
+            "Estimated Line Change Time: --- hours")
         self.lineChangeTimeLabel.setSizePolicy(_QSP_EXPANDING, _QSP_PREFERRED)
         self.seq_layout.addWidget(self.lineChangeTimeLabel)
 
@@ -580,7 +600,8 @@ class SequenceEditDialog(QDialog):
 
         # Turn Editor Setup
         self.turn_history = []  # History stack for Undo functionality
-        self._turn_editor_path_layer = None  # set when user selects a turn (for drag tool CRS)
+        # set when user selects a turn (for drag tool CRS)
+        self._turn_editor_path_layer = None
         self._setup_turn_tab()
         self._setup_calendar_tab()
 
@@ -608,8 +629,10 @@ class SequenceEditDialog(QDialog):
         self.upButton.clicked.connect(self.move_up)
         self.downButton.clicked.connect(self.move_down)
         self.copyButton.clicked.connect(self.copy_table_to_clipboard)
-        self.exportButton.clicked.connect(self.export_to_xlsx) # Connect export button
-        self.tableWidget.itemSelectionChanged.connect(self.update_button_states)
+        self.exportButton.clicked.connect(
+            self.export_to_xlsx)  # Connect export button
+        self.tableWidget.itemSelectionChanged.connect(
+            self.update_button_states)
 
         # --- Initial Population ---
         self.run_full_timing_calculation_and_update(show_message=False)
@@ -623,7 +646,8 @@ class SequenceEditDialog(QDialog):
             self._posiview_overlay = None
             return
         try:
-            self._posiview_overlay = PosiViewFinalizeOverlay(self, self.canvas, self.calendar_canvas)
+            self._posiview_overlay = PosiViewFinalizeOverlay(
+                self, self.canvas, self.calendar_canvas)
         except Exception as e:
             log.warning("PosiView finalize overlay init failed: %s", e)
             self._posiview_overlay = None
@@ -648,15 +672,19 @@ class SequenceEditDialog(QDialog):
         turn_cache = self.recalculation_context.get("turn_cache")
         _get_cached_turn = self.recalculation_context.get("_get_cached_turn")
         _find_runin_geom = self.recalculation_context.get("_find_runin_geom")
-        _calculate_runin_time = self.recalculation_context.get("_calculate_runin_time")
-        _get_next_exit_state = self.recalculation_context.get("_get_next_exit_state")
-        _get_entry_details = self.recalculation_context.get("_get_entry_details")
+        _calculate_runin_time = self.recalculation_context.get(
+            "_calculate_runin_time")
+        _get_next_exit_state = self.recalculation_context.get(
+            "_get_next_exit_state")
+        _get_entry_details = self.recalculation_context.get(
+            "_get_entry_details")
 
         if not all([sim_params, line_data, required_layers, turn_cache is not None,
                     _get_cached_turn, _find_runin_geom, _calculate_runin_time,
                     _get_next_exit_state, _get_entry_details]):
             _pop_wait_cursor_if_busy()
-            QMessageBox.critical(self, "Context Error", "Missing required context for timing calculation. Cannot proceed.")
+            QMessageBox.critical(
+                self, "Context Error", "Missing required context for timing calculation. Cannot proceed.")
             log.error("Error: Missing context for segment time calculation.")
             return None
 
@@ -671,18 +699,22 @@ class SequenceEditDialog(QDialog):
             line_num = sequence[0]
             is_reciprocal = (directions.get(line_num) == 'high_to_low')
             line_info = line_data.get(line_num)
-            if not line_info: raise ValueError(f"Line data not found for line {line_num}")
+            if not line_info:
+                raise ValueError(f"Line data not found for line {line_num}")
 
-            line_time_s = line_info.get('length', 0) / shooting_speed_mps(sim_params, bool(is_reciprocal))
+            line_time_s = line_info.get(
+                'length', 0) / shooting_speed_mps(sim_params, bool(is_reciprocal))
 
-            runin_geom = _find_runin_geom(required_layers['runins'], line_num, "End" if is_reciprocal else "Start", sim_params.get('run_in_length_meters', 500))
+            runin_geom = _find_runin_geom(
+                required_layers['runins'], line_num, "End" if is_reciprocal else "Start", sim_params.get('run_in_length_meters', 500))
             runin_time_s = (
                 _calculate_runin_time(runin_geom, sim_params, is_reciprocal)
                 if runin_geom
                 else 0.0
             )
 
-            runout_geom = _find_runin_geom(required_layers['runins'], line_num, "Start" if is_reciprocal else "End", sim_params.get('run_out_length_meters', 0))
+            runout_geom = _find_runin_geom(
+                required_layers['runins'], line_num, "Start" if is_reciprocal else "End", sim_params.get('run_out_length_meters', 0))
             runout_time_s = (
                 _calculate_runin_time(runout_geom, sim_params, is_reciprocal)
                 if runout_geom
@@ -691,7 +723,8 @@ class SequenceEditDialog(QDialog):
 
             segment_start_time = current_time
             segment_duration_s = runin_time_s + line_time_s + runout_time_s
-            segment_end_time = segment_start_time + timedelta(seconds=segment_duration_s)
+            segment_end_time = segment_start_time + \
+                timedelta(seconds=segment_duration_s)
             total_segment_time = segment_duration_s
 
             log.debug(f"  Line {line_num} (First): Start={segment_start_time.strftime('%H:%M:%S')}, RunIn={runin_time_s:.1f}s, Line={line_time_s:.1f}s, RunOut={runout_time_s:.1f}s, End={segment_end_time.strftime('%H:%M:%S')}")
@@ -707,26 +740,34 @@ class SequenceEditDialog(QDialog):
             current_time = segment_end_time
             total_cost_seconds += total_segment_time
 
-            current_exit_pt, current_exit_hdg = _get_next_exit_state(line_num, is_reciprocal, line_data, sim_params)
+            current_exit_pt, current_exit_hdg = _get_next_exit_state(
+                line_num, is_reciprocal, line_data, sim_params)
             if current_exit_pt is None or current_exit_hdg is None:
-                 raise ValueError(f"Could not determine exit state after first line {line_num}")
-            current_state = { 'exit_pt': current_exit_pt, 'exit_hdg': current_exit_hdg }
+                raise ValueError(
+                    f"Could not determine exit state after first line {line_num}")
+            current_state = {'exit_pt': current_exit_pt,
+                             'exit_hdg': current_exit_hdg}
 
             for i in range(len(sequence) - 1):
                 from_line = sequence[i]
-                line_num = sequence[i+1]
-                from_is_reciprocal = (directions.get(from_line) == 'high_to_low')
+                line_num = sequence[i + 1]
+                from_is_reciprocal = (
+                    directions.get(from_line) == 'high_to_low')
                 is_reciprocal = (directions.get(line_num) == 'high_to_low')
 
                 line_info = line_data.get(line_num)
-                if not line_info: raise ValueError(f"Line data not found for line {line_num}")
+                if not line_info:
+                    raise ValueError(
+                        f"Line data not found for line {line_num}")
 
-                p_entry, h_entry = _get_entry_details(line_info, is_reciprocal, sim_params)
+                p_entry, h_entry = _get_entry_details(
+                    line_info, is_reciprocal, sim_params)
                 exit_pt = current_state['exit_pt']
                 exit_hdg = current_state['exit_hdg']
 
                 if not p_entry or h_entry is None or not exit_pt or exit_hdg is None:
-                    raise ValueError(f"Missing turn data for {from_line}->{line_num}")
+                    raise ValueError(
+                        f"Missing turn data for {from_line}->{line_num}")
 
                 turn_key = f"{from_line}_{line_num}"
                 turn_override = custom_turns.get(turn_key, {})
@@ -734,7 +775,8 @@ class SequenceEditDialog(QDialog):
                 custom_flip = turn_override.get("flip", False)
                 nudge_dx = float(turn_override.get("nudge_dx", 0) or 0)
                 nudge_dy = float(turn_override.get("nudge_dy", 0) or 0)
-                mid_loop_count = int(turn_override.get("mid_loop_count", 0) or 0)
+                mid_loop_count = int(
+                    turn_override.get("mid_loop_count", 0) or 0)
                 mid_loop_side = int(turn_override.get("mid_loop_side", 1) or 1)
                 mid_loop_dx = float(turn_override.get("mid_loop_dx", 0) or 0)
                 mid_loop_dy = float(turn_override.get("mid_loop_dy", 0) or 0)
@@ -769,27 +811,35 @@ class SequenceEditDialog(QDialog):
                     mid_loop_dy=mid_loop_dy,
                 )
                 if turn_geom is None or turn_time_s is None:
-                    raise ValueError(f"Turn calculation failed for {from_line}->{line_num}")
+                    raise ValueError(
+                        f"Turn calculation failed for {from_line}->{line_num}")
 
-                line_time_s = line_info.get('length', 0) / shooting_speed_mps(sim_params, bool(is_reciprocal))
+                line_time_s = line_info.get(
+                    'length', 0) / shooting_speed_mps(sim_params, bool(is_reciprocal))
 
-                runin_geom = _find_runin_geom(required_layers['runins'], line_num, "End" if is_reciprocal else "Start", sim_params.get('run_in_length_meters', 500))
+                runin_geom = _find_runin_geom(
+                    required_layers['runins'], line_num, "End" if is_reciprocal else "Start", sim_params.get('run_in_length_meters', 500))
                 runin_time_s = (
-                    _calculate_runin_time(runin_geom, sim_params, is_reciprocal)
+                    _calculate_runin_time(
+                        runin_geom, sim_params, is_reciprocal)
                     if runin_geom
                     else 0.0
                 )
 
-                runout_geom = _find_runin_geom(required_layers['runins'], line_num, "Start" if is_reciprocal else "End", sim_params.get('run_out_length_meters', 0))
+                runout_geom = _find_runin_geom(
+                    required_layers['runins'], line_num, "Start" if is_reciprocal else "End", sim_params.get('run_out_length_meters', 0))
                 runout_time_s = (
-                    _calculate_runin_time(runout_geom, sim_params, is_reciprocal)
+                    _calculate_runin_time(
+                        runout_geom, sim_params, is_reciprocal)
                     if runout_geom
                     else 0.0
                 )
 
-                segment_start_time = current_time + timedelta(seconds=turn_time_s)
+                segment_start_time = current_time + \
+                    timedelta(seconds=turn_time_s)
                 segment_duration_s = runin_time_s + line_time_s + runout_time_s
-                segment_end_time = segment_start_time + timedelta(seconds=segment_duration_s)
+                segment_end_time = segment_start_time + \
+                    timedelta(seconds=segment_duration_s)
                 total_segment_time = turn_time_s + segment_duration_s
 
                 log.debug(f"  Line {line_num}: PrevEnd={current_time.strftime('%H:%M:%S')}, Turn={turn_time_s:.1f}s, Start={segment_start_time.strftime('%H:%M:%S')}, RunIn={runin_time_s:.1f}s, Line={line_time_s:.1f}s, RunOut={runout_time_s:.1f}s, End={segment_end_time.strftime('%H:%M:%S')}")
@@ -805,21 +855,25 @@ class SequenceEditDialog(QDialog):
                 current_time = segment_end_time
                 total_cost_seconds += total_segment_time
 
-                current_exit_pt, current_exit_hdg = _get_next_exit_state(line_num, is_reciprocal, line_data, sim_params)
+                current_exit_pt, current_exit_hdg = _get_next_exit_state(
+                    line_num, is_reciprocal, line_data, sim_params)
                 if current_exit_pt is None or current_exit_hdg is None:
-                     raise ValueError(f"Could not determine exit state after line {line_num}")
-                current_state = { 'exit_pt': current_exit_pt, 'exit_hdg': current_exit_hdg }
+                    raise ValueError(
+                        f"Could not determine exit state after line {line_num}")
+                current_state = {'exit_pt': current_exit_pt,
+                                 'exit_hdg': current_exit_hdg}
 
-            log.debug(f"Total Calculated Cost: {total_cost_seconds:.1f} seconds")
+            log.debug(
+                f"Total Calculated Cost: {total_cost_seconds:.1f} seconds")
             self.current_sequence_info['cost'] = total_cost_seconds
             log.debug("--- Finished Calculating Segment Times ---")
             return timings
 
         except Exception as e:
 
-            QMessageBox.warning(self, "Timing Error", f"Could not calculate segment times:\n{e}")
+            QMessageBox.warning(self, "Timing Error",
+                                f"Could not calculate segment times:\n{e}")
             return None
-
 
     def run_full_timing_calculation_and_update(self, show_message=True):
         """Calculates timings for all segments and updates the table and total time label."""
@@ -827,24 +881,26 @@ class SequenceEditDialog(QDialog):
         calculation_ok = False
         try:
             sequence = self.current_sequence_info.get('seq', [])
-            directions = self.current_sequence_info.get('state', {}).get('line_directions', {})
+            directions = self.current_sequence_info.get(
+                'state', {}).get('line_directions', {})
 
             if not sequence:
-                 log.warning("Cannot calculate timing, sequence is empty.")
-                 self.timeLabel.setText("Estimated Total Time: No Sequence")
-                 self.populate_table() # Clear table
-                 return False
+                log.warning("Cannot calculate timing, sequence is empty.")
+                self.timeLabel.setText("Estimated Total Time: No Sequence")
+                self.populate_table()  # Clear table
+                return False
 
             log.info("Running full timing calculation...")
             new_timings = self._calculate_segment_times(sequence, directions)
 
             if new_timings is not None:
-                self.segment_timings = new_timings # Update stored timings
-                self.populate_table() # Update table with new timings
-                self.update_time_label() # Update total time label
+                self.segment_timings = new_timings  # Update stored timings
+                self.populate_table()  # Update table with new timings
+                self.update_time_label()  # Update total time label
                 if show_message:
                     _pop_wait_cursor_if_busy()
-                    QMessageBox.information(self, "Calculation Complete", "Timings updated.")
+                    QMessageBox.information(
+                        self, "Calculation Complete", "Timings updated.")
                 calculation_ok = True
                 log.info("Timing calculation successful.")
             else:
@@ -854,14 +910,17 @@ class SequenceEditDialog(QDialog):
 
         finally:
             _pop_wait_cursor_if_busy()
-        return calculation_ok # Return success/failure
+        return calculation_ok  # Return success/failure
 
     def populate_table(self):
         """ Fills the table including Sequence numbers, SPs and formatted duration. """
         sequence = self.current_sequence_info.get('seq', [])
-        directions = self.current_sequence_info.get('state', {}).get('line_directions', {})
-        log.debug(f"[populate_table] Using directions map: {directions}") # DEBUG
-        line_data_map = self.recalculation_context.get("line_data", {}) # Get line_data from context
+        directions = self.current_sequence_info.get(
+            'state', {}).get('line_directions', {})
+        # DEBUG
+        log.debug(f"[populate_table] Using directions map: {directions}")
+        line_data_map = self.recalculation_context.get(
+            "line_data", {})  # Get line_data from context
 
         self.tableWidget.blockSignals(True)
         self.tableWidget.setRowCount(len(sequence))
@@ -877,12 +936,14 @@ class SequenceEditDialog(QDialog):
             return f"{hours:02d}:{minutes:02d}"
 
         # --- Store combos and their desired indices ---
-        combos_to_set = [] # List to hold dictionaries {'combo': QComboBox, 'index': int, 'row': int, 'line': int}
+        # List to hold dictionaries {'combo': QComboBox, 'index': int, 'row': int, 'line': int}
+        combos_to_set = []
 
         sim_params = self.recalculation_context.get("sim_params") or {}
 
         for i, line_num in enumerate(sequence):
-            line_specific_data = line_data_map.get(line_num, {}) # Get data for this line
+            line_specific_data = line_data_map.get(
+                line_num, {})  # Get data for this line
 
             # --- Sequence Number (Requirement 3) ---
             seq_num_val = self.start_seq_num + i
@@ -894,7 +955,8 @@ class SequenceEditDialog(QDialog):
 
             # Line Number
             line_str = str(line_num)
-            if line_str.endswith('_0'):  # Remove legacy suffixes for cache backward compatibility
+            # Remove legacy suffixes for cache backward compatibility
+            if line_str.endswith('_0'):
                 line_str = line_str[:-2]
             line_item = QTableWidgetItem(line_str)
             line_item.setTextAlignment(_QT_ALIGN_RIGHT | _QT_ALIGN_VCENTER)
@@ -902,18 +964,26 @@ class SequenceEditDialog(QDialog):
             self.tableWidget.setItem(i, COL_LINE_NUM, line_item)
 
             # --- Get SP based on Direction (Requirement 1 - Ensure consistency) ---
-            direction_str = directions.get(line_num, 'low_to_high') # Get stored direction
-            log.debug(f"  Row {i}, Line {line_num}: Fetched direction = '{direction_str}'") # DEBUG
+            direction_str = directions.get(
+                line_num, 'low_to_high')  # Get stored direction
+            # DEBUG
+            log.debug(
+                f"  Row {i}, Line {line_num}: Fetched direction = '{direction_str}'")
             is_reciprocal = (direction_str == 'high_to_low')
             # Fetch SPs based on the *stored* direction
-            start_sp_val = line_specific_data.get('highest_sp') if is_reciprocal else line_specific_data.get('lowest_sp')
-            end_sp_val = line_specific_data.get('lowest_sp') if is_reciprocal else line_specific_data.get('highest_sp')
-            start_sp_str = str(start_sp_val) if start_sp_val is not None else "N/A"
+            start_sp_val = line_specific_data.get(
+                'highest_sp') if is_reciprocal else line_specific_data.get('lowest_sp')
+            end_sp_val = line_specific_data.get(
+                'lowest_sp') if is_reciprocal else line_specific_data.get('highest_sp')
+            start_sp_str = str(
+                start_sp_val) if start_sp_val is not None else "N/A"
             end_sp_str = str(end_sp_val) if end_sp_val is not None else "N/A"
 
             start_sp_item = QTableWidgetItem(start_sp_str)
             start_sp_item.setTextAlignment(_QT_ALIGN_RIGHT | _QT_ALIGN_VCENTER)
-            start_sp_item.setFlags(start_sp_item.flags() & ~_QT_ITEM_IS_EDITABLE)
+            start_sp_item.setFlags(
+                start_sp_item.flags() & ~_QT_ITEM_IS_EDITABLE
+            )
             self.tableWidget.setItem(i, COL_START_SP, start_sp_item)
 
             end_sp_item = QTableWidgetItem(end_sp_str)
@@ -937,12 +1007,13 @@ class SequenceEditDialog(QDialog):
                     segment_delta = shoot_end - shoot_start
                     total_seconds = segment_delta.total_seconds()
                 except TypeError:
-                    total_seconds = -1 # Indicate error if dates are not valid
+                    total_seconds = -1  # Indicate error if dates are not valid
 
                 if total_seconds >= 0:
                     hours = int(total_seconds // 3600)
                     minutes = int((total_seconds % 3600) // 60)
-                    duration_str_hhmm = f"{hours:02d}:{minutes:02d}" # Format HH:MM
+                    # Format HH:MM
+                    duration_str_hhmm = f"{hours:02d}:{minutes:02d}"
                 else:
                     duration_str_hhmm = "Error"
 
@@ -954,20 +1025,32 @@ class SequenceEditDialog(QDialog):
                     if next_timing:
                         line_change_seconds = (
                             float(line_timing.get("runout") or 0.0)
-                            + float(next_timing.get("turn") or 0.0)
-                            + float(next_timing.get("runin") or 0.0)
+                            + float(next_timing.get("turn") or 0.0)  # noqa: W503
+                            + float(next_timing.get("runin") or 0.0)  # noqa: W503
                         )
-                        line_change_str_hhmm = _format_hhmm(line_change_seconds)
+                        line_change_str_hhmm = _format_hhmm(
+                            line_change_seconds)
             else:
-                log.warning(f"No timing info found for line {line_num} during table population.")
+                log.warning(
+                    f"No timing info found for line {line_num} during table population.")
 
-            start_item = QTableWidgetItem(start_time_str); start_item.setFlags(start_item.flags() & ~_QT_ITEM_IS_EDITABLE); self.tableWidget.setItem(i, COL_START_TIME, start_item)
-            end_item = QTableWidgetItem(end_time_str); end_item.setFlags(end_item.flags() & ~_QT_ITEM_IS_EDITABLE); self.tableWidget.setItem(i, COL_END_TIME, end_item)
-            duration_item = QTableWidgetItem(duration_str_hhmm); duration_item.setFlags(duration_item.flags() & ~_QT_ITEM_IS_EDITABLE); self.tableWidget.setItem(i, COL_DURATION, duration_item)
-            duration_item.setTextAlignment(_QT_ALIGN_CENTER | _QT_ALIGN_VCENTER) # Center align duration
+            start_item = QTableWidgetItem(start_time_str)
+            start_item.setFlags(start_item.flags() & ~_QT_ITEM_IS_EDITABLE)
+            self.tableWidget.setItem(i, COL_START_TIME, start_item)
+            end_item = QTableWidgetItem(end_time_str)
+            end_item.setFlags(end_item.flags() & ~_QT_ITEM_IS_EDITABLE)
+            self.tableWidget.setItem(i, COL_END_TIME, end_item)
+            duration_item = QTableWidgetItem(duration_str_hhmm)
+            duration_item.setFlags(
+                duration_item.flags() & ~_QT_ITEM_IS_EDITABLE
+            )
+            self.tableWidget.setItem(i, COL_DURATION, duration_item)
+            duration_item.setTextAlignment(
+                _QT_ALIGN_CENTER | _QT_ALIGN_VCENTER)  # Center align duration
 
             try:
-                speed_kn = shooting_speed_knots(sim_params, bool(is_reciprocal))
+                speed_kn = shooting_speed_knots(
+                    sim_params, bool(is_reciprocal))
                 speed_str = f"{float(speed_kn):.2f}"
             except Exception:
                 speed_str = "N/A"
@@ -986,20 +1069,25 @@ class SequenceEditDialog(QDialog):
 
             # Determine the correct index and store it
             direction_index = 1 if is_reciprocal else 0
-            combos_to_set.append({'combo': combo, 'index': direction_index, 'row': i, 'line': line_num})
+            combos_to_set.append(
+                {'combo': combo, 'index': direction_index, 'row': i, 'line': line_num})
             # --- End Direction ComboBox creation ---
 
             line_change_item = QTableWidgetItem(line_change_str_hhmm)
-            line_change_item.setFlags(line_change_item.flags() & ~_QT_ITEM_IS_EDITABLE)
+            line_change_item.setFlags(
+                line_change_item.flags() & ~_QT_ITEM_IS_EDITABLE)
             self.tableWidget.setItem(i, COL_LINE_CHANGE, line_change_item)
-            line_change_item.setTextAlignment(_QT_ALIGN_CENTER | _QT_ALIGN_VCENTER)
+            line_change_item.setTextAlignment(
+                _QT_ALIGN_CENTER | _QT_ALIGN_VCENTER)
 
         # --- Set ComboBox Indices AFTER the loop ---
-        log.debug(f"Setting ComboBox indices for {len(combos_to_set)} rows after loop...")
+        log.debug(
+            f"Setting ComboBox indices for {len(combos_to_set)} rows after loop...")
         for item_info in combos_to_set:
             combo_widget = item_info['combo']
             target_index = item_info['index']
-            log.debug(f"  Row {item_info['row']}, Line {item_info['line']}: Setting index to {target_index}")
+            log.debug(
+                f"  Row {item_info['row']}, Line {item_info['line']}: Setting index to {target_index}")
             combo_widget.setCurrentIndex(target_index)
             # Optional: Check if it worked immediately (less critical now)
             # log.debug(f"  Row {item_info['row']}, Line {item_info['line']}: Actual index after set: {combo_widget.currentIndex()}, Text: '{combo_widget.currentText()}'")
@@ -1019,7 +1107,8 @@ class SequenceEditDialog(QDialog):
     def direction_changed(self, index):
         """ Handles direction ComboBox changes and triggers recalculation. """
         sender_combo = self.sender()
-        if not sender_combo: return
+        if not sender_combo:
+            return
 
         row = sender_combo.property("row")
         line_id = sender_combo.property("line_id")
@@ -1029,41 +1118,44 @@ class SequenceEditDialog(QDialog):
         new_direction_text = sender_combo.currentText()
         new_direction_str = new_direction_text.lower().replace(" ", "_")
 
-        QtCore.QTimer.singleShot(0, lambda: self._apply_direction_change(line_id, new_direction_str, row))
+        QtCore.QTimer.singleShot(0, lambda: self._apply_direction_change(
+            line_id, new_direction_str, row))
 
     def _apply_direction_change(self, line_id, new_direction_str, row):
         """ Actually applies the direction change and triggers UI update. """
         if 'state' in self.current_sequence_info and 'line_directions' in self.current_sequence_info['state']:
             directions = self.current_sequence_info['state']['line_directions']
             sequence = self.current_sequence_info.get('seq', [])
-            
+
             if directions.get(line_id) != new_direction_str:
                 directions[line_id] = new_direction_str
-                log.info(f"Direction updated for line {line_id} to {new_direction_str}")
-                
+                log.info(
+                    f"Direction updated for line {line_id} to {new_direction_str}")
+
                 # Ripple effect
                 if row is not None and row >= 0 and row < len(sequence):
                     for j in range(row + 1, len(sequence)):
                         prev_line = sequence[j - 1]
                         curr_line = sequence[j]
-                        
+
                         base_prev = str(prev_line).split('_')[0]
                         base_curr = str(curr_line).split('_')[0]
-                        
+
                         prev_dir = directions.get(prev_line, 'low_to_high')
                         prev_is_recip = (prev_dir == 'high_to_low')
-                        
+
                         if base_prev == base_curr:
                             curr_is_recip = prev_is_recip
                         else:
                             curr_is_recip = not prev_is_recip
-                            
+
                         directions[curr_line] = 'high_to_low' if curr_is_recip else 'low_to_high'
 
                 # Trigger dynamic map redraw (which includes recalculation)
                 self._trigger_redraw()
         else:
-            log.error(f"Error: Could not update direction state for line {line_id}")
+            log.error(
+                f"Error: Could not update direction state for line {line_id}")
 
     # --- Export to XLSX (Requirement 4) ---
     def copy_table_to_clipboard(self):
@@ -1075,7 +1167,8 @@ class SequenceEditDialog(QDialog):
 
         lines = ["\t".join(_sequence_editor_header_list())]
         for row in range(row_count):
-            lines.append("\t".join(_sequence_editor_row_strings(self.tableWidget, row)))
+            lines.append(
+                "\t".join(_sequence_editor_row_strings(self.tableWidget, row)))
 
         QApplication.clipboard().setText("\n".join(lines))
         log.info("Copied %s sequence rows to clipboard.", row_count)
@@ -1137,8 +1230,8 @@ class SequenceEditDialog(QDialog):
                 self, "Export Error", f"An error occurred while exporting to XLSX:\n{e}"
             )
 
-
     # --- Movement and Update Methods (Adjusted for new column indices) ---
+
     def move_up(self):
         """ Moves row up, updates internal sequence, recalculates timings. """
         currentRow = self.tableWidget.currentRow()
@@ -1164,15 +1257,19 @@ class SequenceEditDialog(QDialog):
 
     def update_button_states(self):
         """ Enables/disables Up/Down buttons based on selection. """
-        currentRow = self.tableWidget.currentRow(); rowCount = self.tableWidget.rowCount()
-        self.upButton.setEnabled(currentRow > 0); self.downButton.setEnabled(currentRow != -1 and currentRow < rowCount - 1)
+        currentRow = self.tableWidget.currentRow()
+        rowCount = self.tableWidget.rowCount()
+        self.upButton.setEnabled(currentRow > 0)
+        self.downButton.setEnabled(
+            currentRow != -1 and currentRow < rowCount - 1)
 
     def update_time_label(self):
         """Updates line-only and total time labels."""
         cost_seconds = self.current_sequence_info.get('cost')
         if cost_seconds is None or cost_seconds < 0:
             self.lineTimeLabel.setText("Estimated Line Time: Error")
-            self.lineChangeTimeLabel.setText("Estimated Line Change Time: Error")
+            self.lineChangeTimeLabel.setText(
+                "Estimated Line Change Time: Error")
             self.timeLabel.setText("Estimated Total Time: Error")
             return
         line_seconds = 0.0
@@ -1186,14 +1283,16 @@ class SequenceEditDialog(QDialog):
                 next_timing = self.segment_timings.get(next_line_num) or {}
                 line_change_seconds += (
                     float(timing.get('runout') or 0.0)
-                    + float(next_timing.get('turn') or 0.0)
-                    + float(next_timing.get('runin') or 0.0)
+                    + float(next_timing.get('turn') or 0.0)  # noqa: W503
+                    + float(next_timing.get('runin') or 0.0)  # noqa: W503
                 )
         line_hours = line_seconds / 3600.0
         line_change_hours = line_change_seconds / 3600.0
         cost_hours = cost_seconds / 3600.0
-        self.lineTimeLabel.setText(f"Estimated Line Time: {line_hours:.2f} hours")
-        self.lineChangeTimeLabel.setText(f"Estimated Line Change Time: {line_change_hours:.2f} hours")
+        self.lineTimeLabel.setText(
+            f"Estimated Line Time: {line_hours:.2f} hours")
+        self.lineChangeTimeLabel.setText(
+            f"Estimated Line Change Time: {line_change_hours:.2f} hours")
         self.timeLabel.setText(f"Estimated Total Time: {cost_hours:.2f} hours")
 
     def on_accept(self):
@@ -1202,12 +1301,14 @@ class SequenceEditDialog(QDialog):
         if self.run_full_timing_calculation_and_update(show_message=False):
             super().accept()
         else:
-            QMessageBox.warning(self, "Accept Failed", "Final timing calculation failed. Cannot accept.")
+            QMessageBox.warning(
+                self, "Accept Failed", "Final timing calculation failed. Cannot accept.")
 
     def get_final_sequence_info(self):
         """ Returns the potentially modified sequence info dictionary. """
         # Ensure the cost is up-to-date before returning
-        self.update_time_label() # Recalculates cost if needed via run_full... called by other methods
+        # Recalculates cost if needed via run_full... called by other methods
+        self.update_time_label()
         return self.current_sequence_info
 
     def _setup_turn_tab(self):
@@ -1283,11 +1384,13 @@ class SequenceEditDialog(QDialog):
         self.selected_turn_key = None
         self.rubber_band = None
         self._turn_radius_circle_rb = None
-        self.spin_radius.valueChanged.connect(self._on_turn_radius_spin_for_handles)
+        self.spin_radius.valueChanged.connect(
+            self._on_turn_radius_spin_for_handles)
         self.btn_turn_full_extent.clicked.connect(self._turn_zoom_full_extent)
         QtCore.QTimer.singleShot(0, self._sync_turn_editor_button_widths)
 
-        QtCore.QTimer.singleShot(100, lambda: self._refresh_canvas_layers(reset_extent=True))
+        QtCore.QTimer.singleShot(
+            100, lambda: self._refresh_canvas_layers(reset_extent=True))
 
     def _setup_calendar_tab(self):
         """Initialize the Acquisition Calendar tab."""
@@ -1301,7 +1404,8 @@ class SequenceEditDialog(QDialog):
         canvas_color = _parent_canvas_color_or_default(self, _QT_COLOR_WHITE)
         self.calendar_canvas.setCanvasColor(canvas_color)
         self.calendar_canvas.enableAntiAliasing(True)
-        self._calendar_map_host = FinalizeMapCanvasHost(self.calendar_canvas, self.calendar_tab)
+        self._calendar_map_host = FinalizeMapCanvasHost(
+            self.calendar_canvas, self.calendar_tab)
         self.calendar_layout.addWidget(self._calendar_map_host, stretch=1)
 
         self.calendar_layer_actions = {}
@@ -1338,12 +1442,15 @@ class SequenceEditDialog(QDialog):
         self.btn_calendar_layers = QtWidgets.QToolButton()
         self.btn_calendar_layers.setText("Layers")
         self.btn_calendar_layers.setPopupMode(_QT_TOOLBTN_INSTANT_POPUP)
-        self.btn_calendar_layers.setMinimumWidth(self.btn_calendar_layers.sizeHint().width() + 10)
-        self.btn_calendar_layers.setToolTip("Toggle visible layers in Acquisition Calendar.")
+        self.btn_calendar_layers.setMinimumWidth(
+            self.btn_calendar_layers.sizeHint().width() + 10)
+        self.btn_calendar_layers.setToolTip(
+            "Toggle visible layers in Acquisition Calendar.")
         controls_layout.addWidget(self.btn_calendar_layers)
 
         self.btn_calendar_full_extent = QPushButton("Full Extent")
-        self.btn_calendar_full_extent.setToolTip("Zoom to full extent of visible layers.")
+        self.btn_calendar_full_extent.setToolTip(
+            "Zoom to full extent of visible layers.")
         controls_layout.addWidget(self.btn_calendar_full_extent)
 
         _f_cal_compact = QFont(_f_cal_bold)
@@ -1370,8 +1477,10 @@ class SequenceEditDialog(QDialog):
         self.lbl_calendar_distance = QLabel("—")
         self.lbl_calendar_distance.setFont(QFont(_f_cal_bold))
         self.lbl_calendar_distance.setMinimumWidth(96)
-        self.lbl_calendar_distance.setAlignment(_QT_ALIGN_LEFT | _QT_ALIGN_VCENTER)
-        self.lbl_calendar_distance.setToolTip("Straight-line ruler distance (right-drag on map).")
+        self.lbl_calendar_distance.setAlignment(
+            _QT_ALIGN_LEFT | _QT_ALIGN_VCENTER)
+        self.lbl_calendar_distance.setToolTip(
+            "Straight-line ruler distance (right-drag on map).")
         controls_layout.addWidget(self.lbl_calendar_distance, stretch=0)
 
         self.btn_calendar_play = QPushButton("Play")
@@ -1381,7 +1490,8 @@ class SequenceEditDialog(QDialog):
         controls_layout.addWidget(self.btn_calendar_speed)
 
         self.btn_calendar_next_segment = QPushButton("Next Segment")
-        self.btn_calendar_next_segment.setToolTip("Jump timeline to the start of the next segment.")
+        self.btn_calendar_next_segment.setToolTip(
+            "Jump timeline to the start of the next segment.")
         controls_layout.addWidget(self.btn_calendar_next_segment)
 
         self.chk_calendar_realtime = QCheckBox("Real-time 1x")
@@ -1434,7 +1544,8 @@ class SequenceEditDialog(QDialog):
         self.calendar_hover_marker.hide()
 
         self._calendar_measure_start = None
-        self._calendar_measure_rubber = QgsRubberBand(self.calendar_canvas, QgsWkbTypes.LineGeometry)
+        self._calendar_measure_rubber = QgsRubberBand(
+            self.calendar_canvas, QgsWkbTypes.LineGeometry)
         self._calendar_measure_rubber.setColor(QColor(40, 160, 40, 220))
         self._calendar_measure_rubber.setWidth(2)
         self._calendar_measure_rubber.hide()
@@ -1449,13 +1560,17 @@ class SequenceEditDialog(QDialog):
         )
         self.calendar_canvas.setMapTool(self.calendar_tool)
 
-        self._calendar_ruler_escape_shortcut = QShortcut(QKeySequence(_QT_KEY_ESCAPE), self.calendar_canvas)
-        self._calendar_ruler_escape_shortcut.setContext(_QT_WIDGET_WITH_CHILDREN_SHORTCUT)
-        self._calendar_ruler_escape_shortcut.activated.connect(self._clear_calendar_ruler)
+        self._calendar_ruler_escape_shortcut = QShortcut(
+            QKeySequence(_QT_KEY_ESCAPE), self.calendar_canvas)
+        self._calendar_ruler_escape_shortcut.setContext(
+            _QT_WIDGET_WITH_CHILDREN_SHORTCUT)
+        self._calendar_ruler_escape_shortcut.activated.connect(
+            self._clear_calendar_ruler)
 
         self.calendar_play_timer = QtCore.QTimer(self)
         self.calendar_play_timer.setInterval(120)
-        self.calendar_play_timer.timeout.connect(self._advance_calendar_playback)
+        self.calendar_play_timer.timeout.connect(
+            self._advance_calendar_playback)
 
         self.calendar_pulse_timer = QtCore.QTimer(self)
         self.calendar_pulse_timer.setInterval(500)
@@ -1465,15 +1580,22 @@ class SequenceEditDialog(QDialog):
 
         self.btn_calendar_play.clicked.connect(self._toggle_calendar_playback)
         self.btn_calendar_speed.clicked.connect(self._cycle_calendar_speed)
-        self.btn_calendar_next_segment.clicked.connect(self._calendar_jump_next_segment)
-        self.chk_calendar_realtime.toggled.connect(self._on_calendar_realtime_toggled)
-        self.btn_calendar_full_extent.clicked.connect(self._calendar_zoom_full_extent)
-        self.chk_calendar_follow.toggled.connect(self._on_calendar_follow_toggled)
-        self.slider_calendar.valueChanged.connect(self._on_calendar_slider_changed)
+        self.btn_calendar_next_segment.clicked.connect(
+            self._calendar_jump_next_segment)
+        self.chk_calendar_realtime.toggled.connect(
+            self._on_calendar_realtime_toggled)
+        self.btn_calendar_full_extent.clicked.connect(
+            self._calendar_zoom_full_extent)
+        self.chk_calendar_follow.toggled.connect(
+            self._on_calendar_follow_toggled)
+        self.slider_calendar.valueChanged.connect(
+            self._on_calendar_slider_changed)
         self._update_calendar_speed_button_label()
 
-        QtCore.QTimer.singleShot(100, lambda: self._refresh_acquisition_calendar(reset_extent=True))
-        QtCore.QTimer.singleShot(120, lambda: self._on_main_tab_changed(self.tabs.currentIndex()))
+        QtCore.QTimer.singleShot(
+            100, lambda: self._refresh_acquisition_calendar(reset_extent=True))
+        QtCore.QTimer.singleShot(
+            120, lambda: self._on_main_tab_changed(self.tabs.currentIndex()))
         QtCore.QTimer.singleShot(180, self._sync_calendar_button_widths)
 
         self._update_calendar_follow_checkbox_enabled()
@@ -1625,11 +1747,17 @@ class SequenceEditDialog(QDialog):
             return False
 
         layers = list(prj.mapLayers().values())
-        layers.sort(key=lambda l: (str(l.name() or "").casefold(), l.id()))
+        layers.sort(
+            key=lambda layer_obj: (
+                str(layer_obj.name() or "").casefold(),
+                layer_obj.id(),
+            )
+        )
 
         # Persist enabled layer names across dialog openings.
         settings = QtCore.QSettings()
-        saved_enabled = settings.value("lookahead/acquisition_calendar/enabled_layer_names", None)
+        saved_enabled = settings.value(
+            "lookahead/acquisition_calendar/enabled_layer_names", None)
         if isinstance(saved_enabled, str):
             # QSettings may return a comma-separated string depending on backend.
             saved_enabled = [s for s in saved_enabled.split(",") if s]
@@ -1645,7 +1773,8 @@ class SequenceEditDialog(QDialog):
             default_on = False
             try:
                 # Base defaults (Lookahead group + selected No-Go layer).
-                default_on = _is_in_lookahead_group(lyr.id()) or (nogo_id is not None and lyr.id() == nogo_id)
+                default_on = _is_in_lookahead_group(lyr.id()) or (
+                    nogo_id is not None and lyr.id() == nogo_id)
 
                 # Explicit exceptions: keep these OFF by default even if they're in Lookahead.
                 off_by_default_names = {
@@ -1678,7 +1807,8 @@ class SequenceEditDialog(QDialog):
                 lyr = prj.mapLayer(lyr_id)
                 if lyr is not None:
                     enabled_names.append(str(lyr.name()))
-            QtCore.QSettings().setValue("lookahead/acquisition_calendar/enabled_layer_names", enabled_names)
+            QtCore.QSettings().setValue(
+                "lookahead/acquisition_calendar/enabled_layer_names", enabled_names)
         except Exception:
             pass
         self._update_calendar_layers_button_text()
@@ -1688,7 +1818,8 @@ class SequenceEditDialog(QDialog):
 
     def _update_calendar_layers_button_text(self):
         try:
-            enabled = sum(1 for a in (self.calendar_layer_actions or {}).values() if a.isChecked())
+            enabled = sum(1 for a in (
+                self.calendar_layer_actions or {}).values() if a.isChecked())
         except Exception:
             enabled = 0
         self.btn_calendar_layers.setText(f"Layers ({enabled})")
@@ -1702,7 +1833,8 @@ class SequenceEditDialog(QDialog):
             pass
         self._update_calendar_speed_button_label()
         self._update_calendar_layers_button_text()
-        self._refresh_calendar_canvas_layers(reset_extent=reset_extent, force_path_clone=True)
+        self._refresh_calendar_canvas_layers(
+            reset_extent=reset_extent, force_path_clone=True)
         self._rebuild_calendar_segments()
         self._update_calendar_slider_bounds()
         self._sync_calendar_markers_with_time()
@@ -1778,13 +1910,16 @@ class SequenceEditDialog(QDialog):
             self._calendar_tune_preview_label_settings(turn_settings)
             try:
                 mk = str(
-                    (self.recalculation_context.get("sim_params") or {}).get("acquisition_mode_key", "")
+                    (self.recalculation_context.get("sim_params") or {}).get(
+                        "acquisition_mode_key", ""
+                    )
                 ).strip().casefold()
             except Exception:
                 mk = ""
             turn_rule_desc = "Turn_Teardrop (calendar)" if mk == "teardrop" else "Turn_Racetrack (calendar)"
             turn_rule = QgsRuleBasedLabeling.Rule(turn_settings)
-            turn_rule.setFilterExpression("\"SegmentType\" IN ('Turn_Racetrack','Turn_Teardrop','Turn')")
+            turn_rule.setFilterExpression(
+                "\"SegmentType\" IN ('Turn_Racetrack','Turn_Teardrop','Turn')")
             turn_rule.setDescription(turn_rule_desc)
             rules.append(turn_rule)
 
@@ -1836,7 +1971,8 @@ class SequenceEditDialog(QDialog):
             layer.setLabeling(QgsRuleBasedLabeling(root_rule))
             layer.setLabelsEnabled(True)
         except Exception:
-            log.exception("Acquisition Calendar: failed to apply stable preview labeling")
+            log.exception(
+                "Acquisition Calendar: failed to apply stable preview labeling")
 
     def _calendar_get_optimized_path_canvas_layer(self, source: QgsVectorLayer, force_rebuild: bool = False):
         """
@@ -1859,10 +1995,10 @@ class SequenceEditDialog(QDialog):
         prev_src = getattr(self, "_calendar_preview_src", None)
         if (
             not force_rebuild
-            and prev is not None
-            and prev_src is source
-            and prev_fc == fc
-            and _vector_layer_alive(prev)
+            and prev is not None  # noqa: W503
+            and prev_src is source  # noqa: W503
+            and prev_fc == fc  # noqa: W503
+            and _vector_layer_alive(prev)  # noqa: W503
         ):
             return prev
 
@@ -1888,14 +2024,16 @@ class SequenceEditDialog(QDialog):
             mem.dataProvider().addAttributes(source.fields().toList())
             mem.updateFields()
         except Exception:
-            log.exception("Acquisition Calendar: could not copy fields to preview path layer")
+            log.exception(
+                "Acquisition Calendar: could not copy fields to preview path layer")
             return source
         try:
             feats = [QgsFeature(f) for f in source.getFeatures()]
             mem.dataProvider().addFeatures(feats)
             mem.updateExtents()
         except Exception:
-            log.exception("Acquisition Calendar: could not copy features to preview path layer")
+            log.exception(
+                "Acquisition Calendar: could not copy features to preview path layer")
             return source
         try:
             r = source.renderer()
@@ -1965,7 +2103,8 @@ class SequenceEditDialog(QDialog):
                 if isinstance(lyr, QgsVectorLayer) and (lyr.name() or "") == "Optimized_Path":
                     path_layer_checked = True
                     lyr_to_show = self._calendar_get_optimized_path_canvas_layer(
-                        lyr, force_rebuild=bool(reset_extent or force_path_clone)
+                        lyr, force_rebuild=bool(
+                            reset_extent or force_path_clone)
                     )
             except Exception:
                 lyr_to_show = lyr
@@ -1977,11 +2116,12 @@ class SequenceEditDialog(QDialog):
         try:
             root = prj.layerTreeRoot()
             if hasattr(root, "layerOrder"):
-                tree_order = [l.id() for l in root.layerOrder()]
-                collected_layers.sort(key=lambda item: tree_order.index(item[0].id()) if item[0].id() in tree_order else 999999)
+                tree_order = [layer_obj.id() for layer_obj in root.layerOrder()]
+                collected_layers.sort(key=lambda item: tree_order.index(
+                    item[0].id()) if item[0].id() in tree_order else 999999)
         except Exception:
             pass
-            
+
         layers = [item[1] for item in collected_layers]
 
         if layers:
@@ -1991,9 +2131,9 @@ class SequenceEditDialog(QDialog):
                 try:
                     op_enabled = (
                         optimized_path is not None
-                        and optimized_path.id() in self.calendar_layer_actions
-                        and self.calendar_layer_actions[optimized_path.id()].isChecked()
-                        and _vector_layer_alive(optimized_path)
+                        and optimized_path.id() in self.calendar_layer_actions  # noqa: W503
+                        and self.calendar_layer_actions[optimized_path.id()].isChecked()  # noqa: W503
+                        and _vector_layer_alive(optimized_path)  # noqa: W503
                     )
                 except Exception:
                     op_enabled = False
@@ -2048,17 +2188,20 @@ class SequenceEditDialog(QDialog):
             if geom is None or geom.isEmpty():
                 continue
             try:
-                duration_s = max(0.0, float(feat.attribute("Duration_s") or 0.0))
+                duration_s = max(0.0, float(
+                    feat.attribute("Duration_s") or 0.0))
             except Exception:
                 duration_s = 0.0
             heading_val = feat.attribute("Heading")
             try:
-                heading = float(heading_val) if heading_val is not None and str(heading_val) != "NULL" else None
+                heading = float(heading_val) if heading_val is not None and str(
+                    heading_val) != "NULL" else None
             except Exception:
                 heading = None
             start_qdt = feat.attribute("StartTime")
             end_qdt = feat.attribute("EndTime")
-            start_dt = start_qdt.toPyDateTime() if hasattr(start_qdt, "toPyDateTime") else None
+            start_dt = start_qdt.toPyDateTime() if hasattr(
+                start_qdt, "toPyDateTime") else None
             end_dt = end_qdt.toPyDateTime() if hasattr(end_qdt, "toPyDateTime") else None
             segment = {
                 "feature_id": feat.id(),
@@ -2123,7 +2266,8 @@ class SequenceEditDialog(QDialog):
                 continue
 
             try:
-                d_start = math.hypot(a.x() - prev_end.x(), a.y() - prev_end.y())
+                d_start = math.hypot(a.x() - prev_end.x(),
+                                     a.y() - prev_end.y())
                 d_end = math.hypot(b.x() - prev_end.x(), b.y() - prev_end.y())
             except Exception:
                 d_start, d_end = 0.0, 0.0
@@ -2176,7 +2320,8 @@ class SequenceEditDialog(QDialog):
             pts = []
         if not pts or len(pts) < 2:
             return bool(segment.get("reverse", False))
-        h_forward = self._heading_from_xy(QgsPointXY(pts[0]), QgsPointXY(pts[-1]))
+        h_forward = self._heading_from_xy(
+            QgsPointXY(pts[0]), QgsPointXY(pts[-1]))
         h_backward = None
         if h_forward is not None:
             h_backward = (h_forward + 180.0) % 360.0
@@ -2192,15 +2337,18 @@ class SequenceEditDialog(QDialog):
         current_value = min(self.slider_calendar.value(), max_seconds)
         self.slider_calendar.blockSignals(True)
         self.slider_calendar.setRange(0, max_seconds)
-        self.slider_calendar.setTickInterval(max(3600, max_seconds // 12 if max_seconds > 0 else 3600))
+        self.slider_calendar.setTickInterval(
+            max(3600, max_seconds // 12 if max_seconds > 0 else 3600))
         self.slider_calendar.setValue(current_value)
         self.slider_calendar.blockSignals(False)
 
         if self.calendar_segments:
             first = self.calendar_segments[0]
             last = self.calendar_segments[-1]
-            self.lbl_calendar_start.setText(first["start_dt"].strftime("%Y-%m-%d %H:%M") if first["start_dt"] else "---")
-            self.lbl_calendar_end.setText(last["end_dt"].strftime("%Y-%m-%d %H:%M") if last["end_dt"] else "---")
+            self.lbl_calendar_start.setText(first["start_dt"].strftime(
+                "%Y-%m-%d %H:%M") if first["start_dt"] else "---")
+            self.lbl_calendar_end.setText(last["end_dt"].strftime(
+                "%Y-%m-%d %H:%M") if last["end_dt"] else "---")
         else:
             self.lbl_calendar_start.setText("---")
             self.lbl_calendar_end.setText("---")
@@ -2208,7 +2356,8 @@ class SequenceEditDialog(QDialog):
     def _calendar_segment_at_seconds(self, seconds_from_start):
         if not self.calendar_segments:
             return None
-        s = max(0.0, min(float(seconds_from_start), self.calendar_total_duration_s))
+        s = max(0.0, min(float(seconds_from_start),
+                self.calendar_total_duration_s))
         for segment in self.calendar_segments:
             # Use strict boundary to avoid "sticking" on zero-duration segments.
             if s < segment["end_offset_s"] or segment is self.calendar_segments[-1]:
@@ -2229,7 +2378,9 @@ class SequenceEditDialog(QDialog):
             # Zero-duration segments should not snap back to their start; show their end.
             distance = max(0.0, geom.length())
         else:
-            ratio = (float(seconds_from_start) - segment["start_offset_s"]) / seg_duration
+            ratio = (
+                float(seconds_from_start) - segment["start_offset_s"]
+            ) / seg_duration
             ratio = max(0.0, min(1.0, ratio))
             if self._segment_should_reverse(segment):
                 distance = geom.length() * (1.0 - ratio)
@@ -2251,7 +2402,8 @@ class SequenceEditDialog(QDialog):
         if segment is None:
             return "---"
         try:
-            local_seconds = max(0.0, float(seconds_from_start) - float(segment.get("start_offset_s", 0.0)))
+            local_seconds = max(0.0, float(
+                seconds_from_start) - float(segment.get("start_offset_s", 0.0)))
         except Exception:
             local_seconds = 0.0
         try:
@@ -2268,10 +2420,12 @@ class SequenceEditDialog(QDialog):
                 pass
 
         # Fallback to first known start if segment time attributes are missing.
-        base_start = self.calendar_segments[0].get("start_dt") if self.calendar_segments else None
+        base_start = self.calendar_segments[0].get(
+            "start_dt") if self.calendar_segments else None
         if base_start:
             try:
-                clamped = max(0.0, min(float(seconds_from_start), float(self.calendar_total_duration_s)))
+                clamped = max(0.0, min(float(seconds_from_start),
+                              float(self.calendar_total_duration_s)))
                 return (base_start + timedelta(seconds=clamped)).strftime("%Y-%m-%d %H:%M:%S")
             except Exception:
                 pass
@@ -2304,7 +2458,8 @@ class SequenceEditDialog(QDialog):
         self.calendar_current_marker.setCenter(point)
         self.calendar_current_marker.show()
 
-        self.lbl_calendar_current.setText(f"Vessel: {self._calendar_time_text(seconds_from_start, segment)}")
+        self.lbl_calendar_current.setText(
+            f"Vessel: {self._calendar_time_text(seconds_from_start, segment)}")
         self._calendar_follow_center_if_active(point)
         self.calendar_canvas.refresh()
 
@@ -2327,7 +2482,8 @@ class SequenceEditDialog(QDialog):
         hh = h / 2.0
         cx, cy = float(center.x()), float(center.y())
         try:
-            self.calendar_canvas.setExtent(QgsRectangle(cx - hw, cy - hh, cx + hw, cy + hh))
+            self.calendar_canvas.setExtent(
+                QgsRectangle(cx - hw, cy - hh, cx + hw, cy + hh))
         except Exception:
             return
 
@@ -2354,7 +2510,8 @@ class SequenceEditDialog(QDialog):
         dy = vy - my
         dist = math.hypot(dx, dy)
         try:
-            mpp = max(1e-18, float(self.calendar_canvas.mapSettings().mapUnitsPerPixel()))
+            mpp = max(
+                1e-18, float(self.calendar_canvas.mapSettings().mapUnitsPerPixel()))
         except Exception:
             mpp = 1.0
         # Stronger pull when the vessel is far from the map centre; gentle when almost aligned.
@@ -2369,7 +2526,8 @@ class SequenceEditDialog(QDialog):
         hh = h / 2.0
         try:
             self.calendar_canvas.setExtent(
-                QgsRectangle(new_mx - hw, new_my - hh, new_mx + hw, new_my + hh)
+                QgsRectangle(new_mx - hw, new_my - hh,
+                             new_mx + hw, new_my + hh)
             )
         except Exception:
             return
@@ -2412,7 +2570,8 @@ class SequenceEditDialog(QDialog):
             T = float(self.calendar_play_timer.interval())
         except Exception:
             T = 120.0
-        rt = getattr(self, "chk_calendar_realtime", None) and self.chk_calendar_realtime.isChecked()
+        rt = getattr(self, "chk_calendar_realtime",
+                     None) and self.chk_calendar_realtime.isChecked()
         if rt:
             ref = 1000.0
             base = max(1.0, float(self.calendar_playback_speed * 1))
@@ -2456,7 +2615,8 @@ class SequenceEditDialog(QDialog):
             self._sync_calendar_markers_with_time()
             try:
                 if getattr(self, "chk_calendar_follow", None) and self.chk_calendar_follow.isChecked():
-                    pt, _ = self._calendar_point_for_seconds(float(self.slider_calendar.value()))
+                    pt, _ = self._calendar_point_for_seconds(
+                        float(self.slider_calendar.value()))
                     if pt is not None:
                         self._calendar_center_map_on_point(pt)
             except Exception:
@@ -2544,8 +2704,10 @@ class SequenceEditDialog(QDialog):
         """
         try:
             params = self.recalculation_context.get("sim_params", {}) or {}
-            l2h = float(params.get("avg_shooting_speed_low_to_high_knots", 0.0) or 0.0)
-            h2l = float(params.get("avg_shooting_speed_high_to_low_knots", 0.0) or 0.0)
+            l2h = float(params.get(
+                "avg_shooting_speed_low_to_high_knots", 0.0) or 0.0)
+            h2l = float(params.get(
+                "avg_shooting_speed_high_to_low_knots", 0.0) or 0.0)
             legacy = float(params.get("avg_shooting_speed_knots", 0.0) or 0.0)
             if l2h <= 0.0:
                 l2h = legacy
@@ -2594,8 +2756,10 @@ class SequenceEditDialog(QDialog):
 
     def _pulse_calendar_marker(self):
         # Pulse without hiding: toggle size every 0.5s (runs in Pause and during Play).
-        self._calendar_pulse_big = not getattr(self, "_calendar_pulse_big", False)
-        self.calendar_current_marker.setIconSize(18 if self._calendar_pulse_big else 10)
+        self._calendar_pulse_big = not getattr(
+            self, "_calendar_pulse_big", False)
+        self.calendar_current_marker.setIconSize(
+            18 if self._calendar_pulse_big else 10)
         # Force repaint so pulse is visible even without other events.
         try:
             self.calendar_canvas.refresh()
@@ -2614,12 +2778,14 @@ class SequenceEditDialog(QDialog):
             if seg_len <= 1e-9:
                 continue
             if cursor + seg_len >= distance_from_start:
-                local_distance = max(0.0, min(seg_len, distance_from_start - cursor))
+                local_distance = max(
+                    0.0, min(seg_len, distance_from_start - cursor))
                 ratio = local_distance / seg_len if seg_len > 0 else 0.0
                 # Keep click->time mapping consistent with playback direction.
                 if self._segment_should_reverse(segment):
                     ratio = 1.0 - ratio
-                seconds = segment["start_offset_s"] + ratio * segment["duration_s"]
+                seconds = segment["start_offset_s"] + \
+                    ratio * segment["duration_s"]
                 interp_distance = local_distance
                 if self._segment_should_reverse(segment):
                     interp_distance = max(0.0, seg_len - local_distance)
@@ -2658,7 +2824,8 @@ class SequenceEditDialog(QDialog):
                 ratio = (local_distance / seg_len) if seg_len > 1e-9 else 0.0
                 if self._segment_should_reverse(segment):
                     ratio = 1.0 - ratio
-                seconds = segment["start_offset_s"] + ratio * float(segment.get("duration_s") or 0.0)
+                seconds = segment["start_offset_s"] + ratio * \
+                    float(segment.get("duration_s") or 0.0)
 
                 # Marker must stay exactly at projected cursor position on geometry.
                 projected_geom = geom.interpolate(local_distance)
@@ -2679,7 +2846,8 @@ class SequenceEditDialog(QDialog):
             return
         self.calendar_hover_marker.setCenter(point)
         self.calendar_hover_marker.show()
-        self.lbl_calendar_cursor.setText(f"Marker: {self._calendar_time_text(seconds_from_start, segment)}")
+        self.lbl_calendar_cursor.setText(
+            f"Marker: {self._calendar_time_text(seconds_from_start, segment)}")
         self.calendar_canvas.refresh()
 
     def _on_calendar_hover(self, pt):
@@ -2706,7 +2874,8 @@ class SequenceEditDialog(QDialog):
         R = 6371000.0
         dlat = lat2 - lat1
         dlon = lon2 - lon1
-        h = math.sin(dlat / 2.0) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2.0) ** 2
+        h = math.sin(dlat / 2.0) ** 2 + math.cos(lat1) * \
+            math.cos(lat2) * math.sin(dlon / 2.0) ** 2
         try:
             c = 2.0 * math.asin(min(1.0, math.sqrt(max(0.0, h))))
         except Exception:
@@ -2717,7 +2886,7 @@ class SequenceEditDialog(QDialog):
         """Distance in metres between two map points (ellipsoid / planar / haversine fallbacks)."""
         if a is None or b is None:
             return None
-            
+
         try:
             crs = self.calendar_canvas.mapSettings().destinationCrs()
             is_geo = crs.isGeographic()
@@ -2744,7 +2913,8 @@ class SequenceEditDialog(QDialog):
                 pass
 
         try:
-            d_plan = float(math.hypot(float(b.x() - a.x()), float(b.y() - a.y())))
+            d_plan = float(math.hypot(
+                float(b.x() - a.x()), float(b.y() - a.y())))
             if crs is not None and crs.isValid():
                 try:
                     from qgis.core import QgsUnitTypes
@@ -2753,7 +2923,8 @@ class SequenceEditDialog(QDialog):
                         meters_unit = Qgis.DistanceUnit.Meters
                     except ImportError:
                         meters_unit = QgsUnitTypes.DistanceUnit.DistanceMeters
-                    fac = float(QgsUnitTypes.fromUnitToUnitFactor(crs.mapUnits(), meters_unit))
+                    fac = float(QgsUnitTypes.fromUnitToUnitFactor(
+                        crs.mapUnits(), meters_unit))
                     if fac > 0.0 and math.isfinite(fac):
                         return float(d_plan * fac)
                 except Exception:
@@ -2855,8 +3026,10 @@ class SequenceEditDialog(QDialog):
                 rb.show()
             except Exception:
                 pass
-        dist = self._calendar_map_distance_m(self._calendar_measure_start, end_pt)
-        self._calendar_set_distance_readout(self._format_calendar_distance_compact(dist))
+        dist = self._calendar_map_distance_m(
+            self._calendar_measure_start, end_pt)
+        self._calendar_set_distance_readout(
+            self._format_calendar_distance_compact(dist))
         try:
             self.calendar_canvas.refresh()
         except Exception:
@@ -2878,7 +3051,8 @@ class SequenceEditDialog(QDialog):
                 rb.show()
             except Exception:
                 pass
-        self._calendar_set_distance_readout(self._format_calendar_distance_compact(dist))
+        self._calendar_set_distance_readout(
+            self._format_calendar_distance_compact(dist))
         try:
             self.calendar_canvas.refresh()
         except Exception:
@@ -2954,11 +3128,13 @@ class SequenceEditDialog(QDialog):
         for i in range(n + 1):
             t = 2.0 * math.pi * i / n
             ring.append(
-                QgsPointXY(center.x() + radius_m * math.cos(t), center.y() + radius_m * math.sin(t))
+                QgsPointXY(center.x() + radius_m * math.cos(t),
+                           center.y() + radius_m * math.sin(t))
             )
         circ = QgsGeometry.fromPolylineXY(ring)
         if self._turn_radius_circle_rb is None:
-            self._turn_radius_circle_rb = QgsRubberBand(self.canvas, QgsWkbTypes.LineGeometry)
+            self._turn_radius_circle_rb = QgsRubberBand(
+                self.canvas, QgsWkbTypes.LineGeometry)
             self._turn_radius_circle_rb.setColor(QColor(60, 100, 220, 200))
             self._turn_radius_circle_rb.setWidth(2)
         self._turn_radius_circle_rb.setToGeometry(circ, path_layer)
@@ -2984,16 +3160,18 @@ class SequenceEditDialog(QDialog):
         if center_xy is None and len(pts) >= 2:
             mid = pts[len(pts) // 2]
             center_xy = QgsPointXY(mid.x(), mid.y())
-        r_guide = float(self.spin_radius.value()) if hasattr(self, "spin_radius") else 0.0
+        r_guide = float(self.spin_radius.value()) if hasattr(
+            self, "spin_radius") else 0.0
         if center_xy is not None and r_guide > 0:
-            self._update_turn_radius_circle_rubber(path_layer, center_xy, r_guide)
+            self._update_turn_radius_circle_rubber(
+                path_layer, center_xy, r_guide)
 
         self.canvas.refresh()
 
     def _on_turn_radius_spin_for_handles(self, *_args):
         if self.selected_turn_feat and _vector_layer_alive(self._turn_editor_path_layer):
-            self._update_turn_node_overlay(self.selected_turn_feat, self._turn_editor_path_layer)
-
+            self._update_turn_node_overlay(
+                self.selected_turn_feat, self._turn_editor_path_layer)
 
     def _turn_editor_visible_map_layers(self):
         """Layers shown on the Turn Editor canvas."""
@@ -3098,8 +3276,10 @@ class SequenceEditDialog(QDialog):
         if snap is None:
             return
         snap["seq"] = list(self.current_sequence_info.get("seq", []))
-        snap["state"] = copy.deepcopy(self.current_sequence_info.get("state", {}))
-        snap["custom_turns"] = copy.deepcopy(self.current_sequence_info.get("custom_turns", {}))
+        snap["state"] = copy.deepcopy(
+            self.current_sequence_info.get("state", {}))
+        snap["custom_turns"] = copy.deepcopy(
+            self.current_sequence_info.get("custom_turns", {}))
         c = self.current_sequence_info.get("cost")
         if c is not None:
             snap["cost"] = c
@@ -3111,13 +3291,15 @@ class SequenceEditDialog(QDialog):
             try:
                 self.recalculation_callback(
                     self.current_sequence_info.get("seq", []),
-                    (self.current_sequence_info.get("state") or {}).get("line_directions", {}),
+                    (self.current_sequence_info.get("state")
+                     or {}).get("line_directions", {}),  # noqa: W503
                     self.current_sequence_info.get("custom_turns"),
                 )
             except TypeError:
                 self.recalculation_callback(
                     self.current_sequence_info.get("seq", []),
-                    (self.current_sequence_info.get("state") or {}).get("line_directions", {}),
+                    (self.current_sequence_info.get("state")
+                     or {}).get("line_directions", {}),  # noqa: W503
                 )
         redraw_cb = self.recalculation_context.get("redraw_callback")
         if redraw_cb:
@@ -3155,7 +3337,8 @@ class SequenceEditDialog(QDialog):
                     if key == self.selected_turn_key:
                         self.selected_turn_feat = feat
                         self.rubber_band.hide()
-                        self.rubber_band.setToGeometry(feat.geometry(), path_layer)
+                        self.rubber_band.setToGeometry(
+                            feat.geometry(), path_layer)
                         self.rubber_band.show()
                         self._update_turn_node_overlay(feat, path_layer)
                         self._refresh_selected_turn_label()
@@ -3204,7 +3387,8 @@ class SequenceEditDialog(QDialog):
         else:
             seq_order = self.selected_turn_feat.attribute("SeqOrder")
             base = f"Selected Turn: Segment {seq_order}"
-        td = self.current_sequence_info.get("custom_turns", {}).get(self.selected_turn_key, {})
+        td = self.current_sequence_info.get(
+            "custom_turns", {}).get(self.selected_turn_key, {})
         radius = td.get("radius")
         if radius is not None:
             base += f"  ·  R={float(radius):.1f} m"
@@ -3227,29 +3411,32 @@ class SequenceEditDialog(QDialog):
         else:
             seq_order = feat.attribute("SeqOrder")
             self.selected_turn_key = str(seq_order)
-            
+
         if not self.rubber_band:
-            self.rubber_band = QgsRubberBand(self.canvas, QgsWkbTypes.LineGeometry)
+            self.rubber_band = QgsRubberBand(
+                self.canvas, QgsWkbTypes.LineGeometry)
             self.rubber_band.setColor(QColor(255, 0, 0))
             self.rubber_band.setWidth(4)
-        
+
         self.rubber_band.setToGeometry(feat.geometry(), layer)
 
         # Set default or custom values
         sim_params = self.recalculation_context.get("sim_params", {})
-        
+
         # Check if we have overrides
         custom_turns = self.current_sequence_info.get("custom_turns", {})
         turn_data = custom_turns.get(self.selected_turn_key, {})
-        
+
         self.spin_radius.blockSignals(True)
-        self.spin_radius.setValue(turn_data.get("radius", sim_params.get("turn_radius_meters", 500)))
+        self.spin_radius.setValue(turn_data.get(
+            "radius", sim_params.get("turn_radius_meters", 500)))
         self.spin_radius.blockSignals(False)
-        
+
         # Set mode combo box
-        global_mode = "Teardrop" if sim_params.get("acquisition_mode_key", "teardrop") == "teardrop" else "Racetrack"
+        global_mode = "Teardrop" if sim_params.get(
+            "acquisition_mode_key", "teardrop") == "teardrop" else "Racetrack"
         saved_mode = turn_data.get("mode", global_mode)
-        
+
         self.combo_mode.blockSignals(True)
         idx = self.combo_mode.findText(saved_mode)
         if idx >= 0:
@@ -3289,7 +3476,8 @@ class SequenceEditDialog(QDialog):
             return
         snap = self.turn_history.pop()
         if isinstance(snap, dict) and "custom_turns" in snap:
-            self.current_sequence_info["custom_turns"] = copy.deepcopy(snap["custom_turns"])
+            self.current_sequence_info["custom_turns"] = copy.deepcopy(
+                snap["custom_turns"])
             if "seq" in snap:
                 self.current_sequence_info["seq"] = list(snap["seq"])
         else:
@@ -3301,20 +3489,23 @@ class SequenceEditDialog(QDialog):
 
     def apply_turn_edits(self):
         if not self.selected_turn_feat:
-            QMessageBox.warning(self, "No Turn Selected", "Please select a turn segment first.")
+            QMessageBox.warning(self, "No Turn Selected",
+                                "Please select a turn segment first.")
             return
-            
+
         self._save_state_for_undo()
         turn_key = self.selected_turn_key
         if "custom_turns" not in self.current_sequence_info:
             self.current_sequence_info["custom_turns"] = {}
-            
+
         if turn_key not in self.current_sequence_info["custom_turns"]:
             self.current_sequence_info["custom_turns"][turn_key] = {}
-            
-        self.current_sequence_info["custom_turns"][turn_key]["radius"] = self.spin_radius.value()
-        self.current_sequence_info["custom_turns"][turn_key]["mode"] = self.combo_mode.currentText()
-        
+
+        self.current_sequence_info["custom_turns"][turn_key]["radius"] = self.spin_radius.value(
+        )
+        self.current_sequence_info["custom_turns"][turn_key]["mode"] = self.combo_mode.currentText(
+        )
+
         self._trigger_redraw()
 
     def set_turn_sense_left(self):
@@ -3325,19 +3516,20 @@ class SequenceEditDialog(QDialog):
 
     def _set_turn_flip(self, flip_val):
         if not self.selected_turn_feat:
-            QMessageBox.warning(self, "No Turn Selected", "Please select a turn segment first.")
+            QMessageBox.warning(self, "No Turn Selected",
+                                "Please select a turn segment first.")
             return
-            
+
         self._save_state_for_undo()
         turn_key = self.selected_turn_key
         if "custom_turns" not in self.current_sequence_info:
             self.current_sequence_info["custom_turns"] = {}
-            
+
         if turn_key not in self.current_sequence_info["custom_turns"]:
             self.current_sequence_info["custom_turns"][turn_key] = {}
-            
+
         self.current_sequence_info["custom_turns"][turn_key]["flip"] = flip_val
-        
+
         self._trigger_redraw()
 
 # --- Excel auto-open (was excel_open.py; inlined to reduce plugin file count) ---

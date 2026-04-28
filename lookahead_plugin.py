@@ -1,7 +1,6 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QApplication
-from .resources import *
 from .lookahead_dockwidget_impl import LookaheadDockWidgetImpl, shutdown_obn_logging
 import os
 import shutil
@@ -74,8 +73,8 @@ class LookaheadPlanner:
         self.pluginIsActive = False
         self.dockwidget = None
 
-
     # noinspection PyMethodMayBeStatic
+
     def tr(self, message):
         """Get the translation for a string using Qt translation API.
 
@@ -90,18 +89,17 @@ class LookaheadPlanner:
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('LookaheadPlanner', message)
 
-
     def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
+            self,
+            icon_path,
+            text,
+            callback,
+            enabled_flag=True,
+            add_to_menu=True,
+            add_to_toolbar=True,
+            status_tip=None,
+            whats_this=None,
+            parent=None):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -164,7 +162,6 @@ class LookaheadPlanner:
 
         return action
 
-
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
@@ -179,7 +176,7 @@ class LookaheadPlanner:
             status_tip=open_label,
             parent=self.iface.mainWindow())
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
@@ -195,7 +192,6 @@ class LookaheadPlanner:
 
         self.pluginIsActive = False
         shutdown_obn_logging()
-
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -229,7 +225,7 @@ class LookaheadPlanner:
 
         shutdown_obn_logging()
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     def run(self):
         """Run method that loads and starts the plugin"""
