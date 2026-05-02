@@ -21,8 +21,12 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.dockWidgetContents.setObjectName("dockWidgetContents")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.dockWidgetContents)
         self.verticalLayout.setObjectName("verticalLayout")
+        self.verticalLayout.setSpacing(4)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_8 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_8.setObjectName("horizontalLayout_8")
+        self.horizontalLayout_8.setSpacing(4)
+        self.horizontalLayout_8.setContentsMargins(0, 0, 0, 0)
         self.importSpsButton = QtWidgets.QPushButton(self.dockWidgetContents)
         self.importSpsButton.setObjectName("importSpsButton")
         self.horizontalLayout_8.addWidget(self.importSpsButton)
@@ -33,6 +37,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_8)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
+        self.horizontalLayout.setSpacing(4)
+        self.horizontalLayout.setContentsMargins(0, 2, 0, 0)
         self.label = QtWidgets.QLabel(self.dockWidgetContents)
         self.label.setLayoutDirection(_QT_LEFT_TO_RIGHT)
         self.label.setObjectName("label")
@@ -43,6 +49,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.horizontalLayout_2.setSpacing(4)
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.label_2 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_2.setObjectName("label_2")
         self.label_2.setAlignment(_QT_ALIGN_LEADING | _QT_ALIGN_VCENTER)
@@ -62,6 +70,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_2)
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.horizontalLayout_4.setSpacing(4)
+        self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
         self.label_4 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_4.setObjectName("label_4")
         self.horizontalLayout_4.addWidget(self.label_4)
@@ -72,6 +82,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_4)
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.horizontalLayout_5.setSpacing(4)
+        self.horizontalLayout_5.setContentsMargins(0, 2, 0, 0)
         self.label_5 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_5.setObjectName("label_5")
         self.horizontalLayout_5.addWidget(self.label_5)
@@ -82,6 +94,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_5)
         self.horizontalLayout_19 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_19.setObjectName("horizontalLayout_19")
+        self.horizontalLayout_19.setSpacing(4)
+        self.horizontalLayout_19.setContentsMargins(0, 0, 0, 0)
         self.label_17 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_17.setObjectName("label_17")
         self.horizontalLayout_19.addWidget(self.label_17)
@@ -97,9 +111,13 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_19)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.verticalLayout_2.setSpacing(0)
+        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_refresh_status = QtWidgets.QHBoxLayout()
         self.horizontalLayout_refresh_status.setObjectName(
             "horizontalLayout_refresh_status")
+        self.horizontalLayout_refresh_status.setSpacing(4)
+        self.horizontalLayout_refresh_status.setContentsMargins(0, 2, 0, 0)
         self.applyFilterButton = QtWidgets.QPushButton(self.dockWidgetContents)
         self.applyFilterButton.setObjectName("applyFilterButton")
         self.horizontalLayout_refresh_status.addWidget(self.applyFilterButton)
@@ -127,6 +145,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.verticalLayout_2)
         self.horizontalLayout_7 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_7.setObjectName("horizontalLayout_7")
+        self.horizontalLayout_7.setSpacing(4)
+        self.horizontalLayout_7.setContentsMargins(0, 2, 0, 0)
         self.markAcquiredButton = QtWidgets.QPushButton(
             self.dockWidgetContents)
         self.markAcquiredButton.setObjectName("markAcquiredButton")
@@ -140,6 +160,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_7)
         self.horizontalLayout_6 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
+        self.horizontalLayout_6.setSpacing(4)
+        self.horizontalLayout_6.setContentsMargins(0, 2, 0, 0)
         self.generateLinesButton = QtWidgets.QPushButton(
             self.dockWidgetContents)
         self.generateLinesButton.setObjectName("generateLinesButton")
@@ -152,6 +174,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_6)
         self.horizontalLayout_18 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_18.setObjectName("horizontalLayout_18")
+        self.horizontalLayout_18.setSpacing(4)
+        self.horizontalLayout_18.setContentsMargins(0, 2, 0, 0)
         self.label_15 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_15.setObjectName("label_15")
         self.horizontalLayout_18.addWidget(self.label_15)
@@ -164,6 +188,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_18)
         self.horizontalLayout_10 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_10.setObjectName("horizontalLayout_10")
+        self.horizontalLayout_10.setSpacing(4)
+        self.horizontalLayout_10.setContentsMargins(0, 2, 0, 0)
         self.label_7 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_7.setObjectName("label_7")
         self.horizontalLayout_10.addWidget(self.label_7)
@@ -186,6 +212,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_10)
         self.horizontalLayout_12 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_12.setObjectName("horizontalLayout_12")
+        self.horizontalLayout_12.setSpacing(4)
+        self.horizontalLayout_12.setContentsMargins(0, 0, 0, 0)
         self.label_9 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_9.setObjectName("label_9")
         self.label_9.setAlignment(_QT_ALIGN_LEADING | _QT_ALIGN_VCENTER)
@@ -210,6 +238,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_12)
         self.horizontalLayout_13 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_13.setObjectName("horizontalLayout_13")
+        self.horizontalLayout_13.setSpacing(4)
+        self.horizontalLayout_13.setContentsMargins(0, 0, 0, 0)
         self.label_10 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_10.setObjectName("label_10")
         self.label_10.setAlignment(_QT_ALIGN_LEADING | _QT_ALIGN_VCENTER)
@@ -228,6 +258,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_13)
         self.horizontalLayout_14 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_14.setObjectName("horizontalLayout_14")
+        self.horizontalLayout_14.setSpacing(4)
+        self.horizontalLayout_14.setContentsMargins(0, 2, 0, 0)
         self.label_11 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_11.setObjectName("label_11")
         self.horizontalLayout_14.addWidget(self.label_11)
@@ -240,6 +272,8 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.verticalLayout.addLayout(self.horizontalLayout_14)
         self.horizontalLayout_15 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_15.setObjectName("horizontalLayout_15")
+        self.horizontalLayout_15.setSpacing(4)
+        self.horizontalLayout_15.setContentsMargins(0, 0, 0, 0)
         self.label_12 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_12.setObjectName("label_12")
         self.label_12.setAlignment(_QT_ALIGN_LEADING | _QT_ALIGN_VCENTER)
@@ -251,6 +285,7 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.acqSpeedPrimaryDoubleSpinBox.setMaximum(7.0)
         self.acqSpeedPrimaryDoubleSpinBox.setSingleStep(0.1)
         self.acqSpeedPrimaryDoubleSpinBox.setProperty("value", 4.2)
+        self.acqSpeedPrimaryDoubleSpinBox.setMinimumWidth(92)
         self.acqSpeedPrimaryDoubleSpinBox.setObjectName(
             "acqSpeedPrimaryDoubleSpinBox")
         self.horizontalLayout_15.addWidget(self.acqSpeedPrimaryDoubleSpinBox)
@@ -261,11 +296,14 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.turnSpeedDoubleSpinBox.setMaximum(7.0)
         self.turnSpeedDoubleSpinBox.setSingleStep(0.1)
         self.turnSpeedDoubleSpinBox.setProperty("value", 3.6)
+        self.turnSpeedDoubleSpinBox.setMinimumWidth(92)
         self.turnSpeedDoubleSpinBox.setObjectName("turnSpeedDoubleSpinBox")
         self.horizontalLayout_15.addWidget(self.turnSpeedDoubleSpinBox)
         self.verticalLayout.addLayout(self.horizontalLayout_15)
         self.horizontalLayout_17 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_17.setObjectName("horizontalLayout_17")
+        self.horizontalLayout_17.setSpacing(4)
+        self.horizontalLayout_17.setContentsMargins(0, 2, 0, 0)
         self.label_14 = QtWidgets.QLabel(self.dockWidgetContents)
         self.label_14.setObjectName("label_14")
         self.horizontalLayout_17.addWidget(self.label_14)
@@ -275,15 +313,15 @@ class Ui_OBNPlannerDockWidgetBase(object):
             QtCore.QDate(2025, 1, 1), QtCore.QTime(0, 0, 0)))
         self.startDateTimeEdit.setCalendarPopup(True)
         self.startDateTimeEdit.setObjectName("startDateTimeEdit")
-        # Narrow docks clip yyyy-MM-dd HH:mm so only minutes look editable — keep full width.
-        self.startDateTimeEdit.setMinimumWidth(232)
         self.horizontalLayout_17.addWidget(self.startDateTimeEdit)
-        self.horizontalLayout_17.setStretch(0, 0)
+        self.horizontalLayout_17.setStretch(0, 1)
         self.horizontalLayout_17.setStretch(1, 1)
         self.verticalLayout.addLayout(self.horizontalLayout_17)
         self.horizontalLayout_finalize = QtWidgets.QHBoxLayout()
         self.horizontalLayout_finalize.setObjectName(
             "horizontalLayout_finalize")
+        self.horizontalLayout_finalize.setSpacing(4)
+        self.horizontalLayout_finalize.setContentsMargins(0, 0, 0, 0)
         self.runSimulationButton = QtWidgets.QPushButton(
             self.dockWidgetContents)
         self.runSimulationButton.setObjectName("runSimulationButton")
@@ -309,12 +347,12 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.label.setText(_translate(
             "OBNPlannerDockWidgetBase", "Sail Lines Layer (*.gpkg):"))
         self.label_2.setText(_translate(
-            "OBNPlannerDockWidgetBase", "Min & Max Lines"))
-        self.label_4.setText(_translate("OBNPlannerDockWidgetBase", "Status"))
+            "OBNPlannerDockWidgetBase", "Min & Max Lines:"))
+        self.label_4.setText(_translate("OBNPlannerDockWidgetBase", "Status:"))
         self.label_5.setText(_translate(
             "OBNPlannerDockWidgetBase", "No-Go Zone Layer:"))
         self.label_17.setText(_translate(
-            "OBNPlannerDockWidgetBase", "Deviation Clearance"))
+            "OBNPlannerDockWidgetBase", "Deviation Clearance:"))
         self.deviationClearanceDoubleSpinBox.setSuffix(
             _translate("OBNPlannerDockWidgetBase", " m"))
         self.applyFilterButton.setText(_translate(
@@ -338,19 +376,19 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.calculateDeviationsButton.setText(_translate(
             "OBNPlannerDockWidgetBase", "Generate Deviation Lines"))
         self.label_15.setText(_translate(
-            "OBNPlannerDockWidgetBase", "Turn Mode"))
+            "OBNPlannerDockWidgetBase", "Turn Mode:"))
         self.acquisitionModeComboBox.setItemText(0, _translate(
             "OBNPlannerDockWidgetBase", "Racetrack (Default)"))
         self.acquisitionModeComboBox.setItemText(
             1, _translate("OBNPlannerDockWidgetBase", "Teardrop"))
         self.label_7.setText(_translate(
-            "OBNPlannerDockWidgetBase", "Run-In & Run-Out (m):"))
+            "OBNPlannerDockWidgetBase", "Run-In & Run-Out:"))
         self.maxRunInDoubleSpinBox.setSuffix(
             _translate("OBNPlannerDockWidgetBase", " m"))
         self.runOutDoubleSpinBox.setSuffix(
             _translate("OBNPlannerDockWidgetBase", " m"))
         self.label_9.setText(_translate(
-            "OBNPlannerDockWidgetBase", "Turn Radius & Rate of Turn"))
+            "OBNPlannerDockWidgetBase", "Turn Radius & Rate of Turn:"))
         self.turnRadiusDoubleSpinBox.setSuffix(
             _translate("OBNPlannerDockWidgetBase", " m"))
         self.vesselTurnRateDoubleSpinBox.setSuffix(
@@ -364,13 +402,13 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.firstHeadingComboBox.setItemText(1, _translate(
             "OBNPlannerDockWidgetBase", "High to Low SP (Reciprocal)"))
         self.label_12.setText(_translate(
-            "OBNPlannerDockWidgetBase", "Low→High"))
+            "OBNPlannerDockWidgetBase", "Line and Turn Speeds (L-H):"))
         self.acqSpeedPrimaryDoubleSpinBox.setSuffix(
             _translate("OBNPlannerDockWidgetBase", " knots"))
         self.turnSpeedDoubleSpinBox.setSuffix(
             _translate("OBNPlannerDockWidgetBase", " knots"))
         self.label_14.setText(_translate(
-            "OBNPlannerDockWidgetBase", "Start Time"))
+            "OBNPlannerDockWidgetBase", "Start Date & Time:"))
         self.startDateTimeEdit.setDisplayFormat(_translate(
             "OBNPlannerDockWidgetBase", "yyyy-MM-dd HH:mm"))
         self.runSimulationButton.setText(_translate(

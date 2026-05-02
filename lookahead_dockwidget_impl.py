@@ -214,7 +214,11 @@ try:
 except AttributeError:
     _QT_LEFT_BUTTON = Qt.LeftButton
 
-_IS_QT6 = hasattr(Qt, "AlignmentFlag")
+# PyQt5 5.15+ also exposes Qt.AlignmentFlag — do not use that as a Qt6 signal.
+try:
+    _IS_QT6 = int(str(QtCore.qVersion()).split(".")[0]) >= 6
+except Exception:
+    _IS_QT6 = False
 
 try:
     _QEVENT_MOUSE_MOVE = QtCore.QEvent.Type.MouseMove
@@ -241,6 +245,11 @@ except AttributeError:
     _QT_BACKGROUND_ROLE = Qt.BackgroundRole
 
 try:
+    _QT_FOREGROUND_ROLE = Qt.ItemDataRole.ForegroundRole
+except AttributeError:
+    _QT_FOREGROUND_ROLE = Qt.ForegroundRole
+
+try:
     _QSTYLE_CE_ITEMVIEWITEM = QStyle.ControlElement.CE_ItemViewItem
     _QSTYLE_SE_ITEMVIEWITEMTEXT = QStyle.SubElement.SE_ItemViewItemText
     _QSTYLE_STATE_SELECTED = QStyle.StateFlag.State_Selected
@@ -253,6 +262,11 @@ try:
     _QT_ELIDE_MIDDLE = Qt.TextElideMode.ElideMiddle
 except AttributeError:
     _QT_ELIDE_MIDDLE = Qt.ElideMiddle
+
+try:
+    _QT_ELIDE_RIGHT = Qt.TextElideMode.ElideRight
+except AttributeError:
+    _QT_ELIDE_RIGHT = Qt.ElideRight
 
 try:
     _QT_KEEP_ASPECT_RATIO = Qt.AspectRatioMode.KeepAspectRatio
@@ -329,15 +343,31 @@ class LineListStatusDelegate(QStyledItemDelegate):
         left_width = max(0, status_rect.left() - gap - left_x)
         left_rect = QtCore.QRect(
             left_x, text_rect.top(), left_width, text_rect.height())
+        # ElideRight (not Middle): avoids chopping the middle of "line [SP] (Seq: …)" on narrow docks.
         left_draw = fm.elidedText(
-            left_text, _QT_ELIDE_MIDDLE, left_rect.width())
+            left_text, _QT_ELIDE_RIGHT, left_rect.width())
 
         painter.save()
         painter.setFont(opt.font)
         if opt.state & _QSTYLE_STATE_SELECTED:
             painter.setPen(opt.palette.color(_QPALETTE_HIGHLIGHTED_TEXT))
         else:
-            painter.setPen(opt.palette.color(_QPALETTE_TEXT))
+            fg = index.data(_QT_FOREGROUND_ROLE)
+            pen_ok = False
+            try:
+                if fg is not None:
+                    if isinstance(fg, QColor) and fg.isValid():
+                        painter.setPen(fg)
+                        pen_ok = True
+                    elif hasattr(fg, "color"):
+                        c = fg.color()
+                        if isinstance(c, QColor) and c.isValid():
+                            painter.setPen(c)
+                            pen_ok = True
+            except Exception:
+                pen_ok = False
+            if not pen_ok:
+                painter.setPen(opt.palette.color(_QPALETTE_TEXT))
         painter.drawText(left_rect, _QT_ALIGN_VCENTER |  # noqa: W504
                          _QT_ALIGN_LEFT, left_draw)
         if status_text:
@@ -635,6 +665,124 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             self._warn_select_sail_layer(action_hint)
         return None
 
+    def _effective_font_point_size(self, f, widget=None):
+        """Best-effort point size from QFont (Qt often reports 0 with themed QGIS)."""
+        if f is None:
+            return 0.0
+        try:
+            ps = f.pointSizeF()
+            if ps is not None and ps > 0:
+                return float(ps)
+        except Exception:
+            pass
+        try:
+            if f.pointSize() > 0:
+                return float(f.pointSize())
+        except Exception:
+            pass
+        try:
+            px = f.pixelSize()
+            if px is not None and px > 0:
+                dpi = 96.0
+                try:
+                    if widget is not None and widget.screen() is not None:
+                        dpi = float(widget.screen().logicalDotsPerInch())
+                except Exception:
+                    pass
+                return max(8.0, (float(px) * 72.0) / max(dpi, 72.0))
+        except Exception:
+            pass
+        return 0.0
+
+    def _bump_font_one_point(self, widget, font):
+        """Increase font by ~1 pt (for QGIS 4 line list legibility)."""
+        try:
+            if font.pointSizeF() > 0:
+                font.setPointSizeF(font.pointSizeF() + 1.0)
+                return
+            if font.pixelSize() > 0:
+                dpi = 96.0
+                try:
+                    if widget is not None and widget.screen() is not None:
+                        dpi = float(widget.screen().logicalDotsPerInch())
+                except Exception:
+                    pass
+                delta = max(1, int(round(dpi / 72.0)))
+                font.setPixelSize(font.pixelSize() + delta)
+        except Exception:
+            pass
+
+    def _apply_line_list_font(self):
+        """
+        Line list font: Qt6 uses monospace aligned to UI size (+1 pt). Qt5 uses the
+        same sans-serif family as the dock — system FixedFont looks poor there and
+        often renders too small.
+        """
+        lw = getattr(self, "lineListWidget", None)
+        if lw is None:
+            return
+        app_font = QtWidgets.QApplication.font(lw)
+
+        if _IS_QT6:
+            lw_font = QFontDatabase.systemFont(_QFONTDB_FIXED_FONT)
+            if not lw_font or not lw_font.family():
+                lw_font = QFont(lw.font())
+                lw_font.setStyleHint(QFont.Monospace)
+
+            base_font = lw.font()
+            try:
+                pt = app_font.pointSizeF()
+                px = app_font.pixelSize()
+                if pt is not None and pt > 0:
+                    lw_font.setPointSizeF(pt)
+                elif px is not None and px > 0:
+                    lw_font.setPixelSize(px)
+                elif base_font.pointSizeF() > 0:
+                    lw_font.setPointSizeF(base_font.pointSizeF())
+                elif base_font.pixelSize() > 0:
+                    lw_font.setPixelSize(base_font.pixelSize())
+            except Exception:
+                if app_font.pointSize() > 0:
+                    lw_font.setPointSize(app_font.pointSize())
+
+            if lw_font.pointSizeF() <= 0 and lw_font.pixelSize() <= 0:
+                pt_eff = self._effective_font_point_size(app_font, lw)
+                if pt_eff <= 0:
+                    pt_eff = self._effective_font_point_size(self.font(), lw)
+                if pt_eff > 0:
+                    lw_font.setPointSizeF(pt_eff)
+
+            self._bump_font_one_point(lw, lw_font)
+            # QGIS 4 / Fusion: same nominal pt reads smaller than QGIS 3 — one more step.
+            self._bump_font_one_point(lw, lw_font)
+            lw.setFont(lw_font)
+            return
+
+        # Qt5 / QGIS 3.x — same family as the rest of the UI (explicit; never monospace).
+        fam = (app_font.family() or "").strip()
+        if not fam:
+            fam = (self.font().family() or "").strip()
+        lw_font = QFont()
+        if fam:
+            lw_font.setFamily(fam)
+        else:
+            lw_font = QFont(app_font)
+        lw_font.setStyleHint(QFont.SansSerif)
+        lw_font.setFixedPitch(False)
+        try:
+            lw_font.setWeight(app_font.weight())
+        except Exception:
+            pass
+
+        pt_eff = self._effective_font_point_size(app_font, lw)
+        if pt_eff <= 0:
+            pt_eff = self._effective_font_point_size(self.font(), lw)
+        if pt_eff <= 0:
+            pt_eff = 9.0
+        # Slightly larger than the dock default (+1 pt, floor 10 pt).
+        lw_font.setPointSizeF(max(float(pt_eff) + 1.0, 10.0))
+        lw.setFont(lw_font)
+
     # --- Initialization ---
     def __init__(self, parent=None):
         """ Constructor: Initializes UI, connects signals, sets defaults. """
@@ -654,13 +802,7 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             self.horizontalLayout,
             _QGSMAPLAYERPROXYMODEL_POINTLAYER,
         )
-        self.sps_layer_combo.layerChanged.connect(
-            self._on_sps_layer_changed_line_num_bounds)
-        # After project load the combo may already point at a layer without emitting layerChanged.
-        QgsProject.instance().readProject.connect(
-            lambda *_args: QtCore.QTimer.singleShot(
-                0, self._sync_min_max_line_spinboxes_from_sps_layer)
-        )
+        # Min/Max Lines UI row is removed from the dock; keep line-bound auto-sync disabled.
         self.nogo_zone_combo = self._replace_combo_with_map_layer_combo(
             self.noGoZoneLayerComboBox,
             self.horizontalLayout_5,
@@ -756,12 +898,7 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         self._normalize_action_button_rows()
         if hasattr(self, 'lineListWidget'):
             self.lineListWidget.setSelectionMode(_QAIV_EXTENDED_SELECTION)
-            # Keep line/status alignment stable by using a monospaced list font.
-            lw_font = QFontDatabase.systemFont(_QFONTDB_FIXED_FONT)
-            if not lw_font or not lw_font.family():
-                lw_font = self.lineListWidget.font()
-                lw_font.setStyleHint(QFont.Monospace)
-            self.lineListWidget.setFont(lw_font)
+            self._apply_line_list_font()
             self.lineListWidget.setHorizontalScrollBarPolicy(
                 _QT_SCROLLBAR_ALWAYS_OFF)
             self.lineListWidget.setTextElideMode(_QT_ELIDE_NONE)
@@ -819,13 +956,17 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             qdt = QtCore.QDateTime(current_datetime)
             self.startDateTimeEdit.setDateTime(qdt)
             log.debug(f"Set Start DateTime to {current_datetime}")
-        # Min/Max Line = smallest / largest LineNum in the chosen SPS layer (field name LineNum).
-        self._setup_min_max_line_tooltips()
+        # Min/Max Lines row is hidden/removed by request; no tooltip/bootstrap hooks.
         self._setup_directional_speed_second_row()
         self._polish_twin_spinbox_rows_layout()
         self._setup_stability_advanced_group()
+        self._apply_requested_row_structure()
         self._align_dock_form_labels()
         self._enforce_compact_dock_heights()
+        self._apply_sail_and_zone_rows_equal_split()
+        if not _IS_QT6:
+            QtCore.QTimer.singleShot(0, self._update_sail_zone_row_half_widths)
+            QtCore.QTimer.singleShot(120, self._update_sail_zone_row_half_widths)
         self._setup_dock_help_shell()
         self._setup_dock_geometry_auto_fix()
         self._recompute_line_list_height_cap()
@@ -836,8 +977,7 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             'turnRadiusDoubleSpinBox', 'vesselTurnRateDoubleSpinBox',
             'acqSpeedPrimaryDoubleSpinBox', 'turnSpeedDoubleSpinBox',
             'acqSpeedHighToLowDoubleSpinBox', 'turnSpeedHighToLowDoubleSpinBox',
-            'firstLineSpinBox', 'firstSeqComboBox',
-            'startLineSpinBox', 'endLineSpinBox'
+            'firstLineSpinBox', 'firstSeqComboBox'
         ]:
             widget = getattr(self, widget_name, None)
             if widget is not None:
@@ -856,9 +996,9 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                 widget.layerChanged.connect(
                     lambda *args: self._save_dock_settings())
 
-        QtCore.QTimer.singleShot(
-            0, self._sync_min_max_line_spinboxes_from_sps_layer)
         QtCore.QTimer.singleShot(100, self._apply_saved_dock_settings)
+        QtCore.QTimer.singleShot(0, self._apply_line_list_font)
+        QtCore.QTimer.singleShot(150, self._apply_line_list_font)
         log.info("Lookahead dock widget initialized.")
 
     def _enable_dock_scroll_content(self):
@@ -931,6 +1071,7 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             self._recompute_line_list_height_cap()
             self.adjustSize()
             self.updateGeometry()
+            self._update_sail_zone_row_half_widths()
 
             mw = self.window()
             if isinstance(mw, QtWidgets.QMainWindow):
@@ -942,6 +1083,62 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                     pass
         except Exception as e:
             log.debug("dock relayout: %s", e)
+
+    def resizeEvent(self, event):
+        super(LookaheadDockWidgetImpl, self).resizeEvent(event)
+        if not _IS_QT6:
+            QtCore.QTimer.singleShot(0, self._update_sail_zone_row_half_widths)
+
+    def _dock_viewport_width(self):
+        """Usable horizontal space inside the dock (Qt5 scroll dock content)."""
+        w = self.widget()
+        if isinstance(w, QtWidgets.QScrollArea):
+            return max(0, int(w.viewport().width()))
+        return max(0, int(self.width()))
+
+    def _update_sail_zone_row_half_widths(self):
+        """
+        Qt5 / QGIS 3.x: strict ~50% / 50% for Sail / Status / No-Go / Dev clearance.
+
+        QHBoxLayout stretch alone does not split evenly because QLabel and combos keep
+        large minimumSizeHint values — extra space skews (~65/35). Capping both cells
+        to half the row width fixes it (labels use word wrap when needed).
+        """
+        if _IS_QT6:
+            return
+        try:
+            inner_fallback = self._dock_viewport_width()
+            if inner_fallback <= 0:
+                return
+            inner_fallback = max(0, inner_fallback - 12)
+
+            for lay_name in (
+                "horizontalLayout",
+                "horizontalLayout_4",
+                "horizontalLayout_5",
+                "horizontalLayout_19",
+            ):
+                lay = getattr(self, lay_name, None)
+                if lay is None or lay.count() < 2:
+                    continue
+                gw = lay.geometry().width()
+                row_w = gw if gw > 0 else inner_fallback
+                sp = lay.spacing()
+                half = max(72, (row_w - sp) // 2)
+
+                for idx in (0, 1):
+                    item = lay.itemAt(idx)
+                    if item is None:
+                        continue
+                    wid = item.widget()
+                    if wid is None:
+                        continue
+                    wid.setMinimumWidth(0)
+                    wid.setMaximumWidth(half)
+                    if idx == 0 and isinstance(wid, QtWidgets.QLabel):
+                        wid.setWordWrap(True)
+        except Exception as e:
+            log.debug("sail zone half widths: %s", e)
 
     def _build_generation_signature(self):
         """
@@ -1074,7 +1271,7 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         h15.deleteLater()
         self.horizontalLayout_15 = None
 
-        w_label.setText("Low→High")
+        w_label.setText("Line and Turn Speeds (L-H):")
         w_label.setToolTip(
             "Shooting and turn speeds while acquiring Low→High along the sail line.")
         w_label.setAlignment(_QT_ALIGN_RIGHT | _QT_ALIGN_VCENTER)
@@ -1108,7 +1305,7 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         w_turn_l2h.setToolTip(
             "Turn / run-in / run-out speed (knots) when the line is shot Low→High.")
 
-        lab_h2l = QtWidgets.QLabel("High→Low", self.dockWidgetContents)
+        lab_h2l = QtWidgets.QLabel("Line and Turn Speeds (H-L):", self.dockWidgetContents)
         lab_h2l.setObjectName("label_speed_direction_h2l")
         lab_h2l.setAlignment(_QT_ALIGN_RIGHT | _QT_ALIGN_VCENTER)
         lab_h2l.setToolTip(
@@ -1200,15 +1397,38 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             lay = getattr(self, lay_name, None)
             if lay is None or lay.count() < 3:
                 continue
-            lay.setStretch(0, 0)
+            # 50/50 split: label half, two spinboxes together half.
+            lay.setStretch(0, 2)
             lay.setStretch(1, 1)
             lay.setStretch(2, 1)
 
         g_speed = getattr(self, "_speed_rows_grid", None)
         if g_speed is not None:
-            g_speed.setColumnStretch(0, 0)
+            # 50/50 split for directional rows: label col half, two spinboxes half.
+            g_speed.setColumnStretch(0, 2)
             g_speed.setColumnStretch(1, 1)
             g_speed.setColumnStretch(2, 1)
+
+        # Start Time row: label 50%, editor 50%.
+        lay_time = getattr(self, "horizontalLayout_17", None)
+        if lay_time is not None and lay_time.count() >= 2:
+            lay_time.setStretch(0, 1)
+            lay_time.setStretch(1, 1)
+
+        # Keep single-combo rows aligned with spinbox rows (same 50/50 split).
+        lay_first_heading = getattr(self, "horizontalLayout_14", None)
+        if lay_first_heading is not None and lay_first_heading.count() >= 2:
+            lay_first_heading.setStretch(0, 1)
+            lay_first_heading.setStretch(1, 1)
+        lay_turn_mode = getattr(self, "horizontalLayout_18", None)
+        if lay_turn_mode is not None and lay_turn_mode.count() >= 2:
+            lay_turn_mode.setStretch(0, 1)
+            lay_turn_mode.setStretch(1, 1)
+        for combo_name in ("firstHeadingComboBox", "acquisitionModeComboBox"):
+            cb = getattr(self, combo_name, None)
+            if cb is not None:
+                cb.setMinimumWidth(0)
+                cb.setSizePolicy(_QSP_EXPANDING, _QSP_FIXED)
 
         # Same minimum width for all four knot spinboxes so columns line up in the speed grid.
         _speed_widgets = [
@@ -1227,14 +1447,68 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             for w in _speed_widgets:
                 w.setMinimumWidth(_mw)
 
+        # Enforce one common minimum width across all paired spinboxes so
+        # low/high speed rows do not look narrower than neighboring twin rows.
+        _paired_spinboxes = [
+            getattr(self, "maxRunInDoubleSpinBox", None),
+            getattr(self, "runOutDoubleSpinBox", None),
+            getattr(self, "turnRadiusDoubleSpinBox", None),
+            getattr(self, "vesselTurnRateDoubleSpinBox", None),
+            getattr(self, "firstLineSpinBox", None),
+            getattr(self, "firstSeqComboBox", None),
+            getattr(self, "acqSpeedPrimaryDoubleSpinBox", None),
+            getattr(self, "turnSpeedDoubleSpinBox", None),
+            getattr(self, "acqSpeedHighToLowDoubleSpinBox", None),
+            getattr(self, "turnSpeedHighToLowDoubleSpinBox", None),
+        ]
+        _paired_spinboxes = [w for w in _paired_spinboxes if w is not None]
+        if _paired_spinboxes:
+            try:
+                _pair_w = max(w.minimumSizeHint().width() for w in _paired_spinboxes)
+            except Exception:
+                _pair_w = 92
+            _pair_w = max(_pair_w, 92)
+            for w in _paired_spinboxes:
+                w.setMinimumWidth(_pair_w)
+
+    def _apply_sail_and_zone_rows_equal_split(self):
+        """
+        Sail Lines, Status, No-Go Zone, Deviation Clearance: label and control each ~50% of row.
+
+        These rows are excluded from _align_dock_form_labels fixed column width.
+
+        On Qt5, QLabel/combo minimum hints prevent true 50/50 from stretch alone — see
+        _update_sail_zone_row_half_widths() which caps each cell after layout.
+        """
+        pol = QtWidgets.QSizePolicy(_QSP_EXPANDING, _QSP_FIXED)
+        pol.setHorizontalStretch(1)
+        for lay_name in (
+            "horizontalLayout",
+            "horizontalLayout_4",
+            "horizontalLayout_5",
+            "horizontalLayout_19",
+        ):
+            lay = getattr(self, lay_name, None)
+            if lay is None or lay.count() < 2:
+                continue
+            lay.setStretch(0, 1)
+            lay.setStretch(1, 1)
+            for i in range(lay.count()):
+                item = lay.itemAt(i)
+                if item is None:
+                    continue
+                w = item.widget()
+                if w is None:
+                    continue
+                w.setSizePolicy(pol)
+                w.setMinimumWidth(0)
+                if isinstance(w, QtWidgets.QLabel):
+                    w.setAlignment(_QT_ALIGN_RIGHT | _QT_ALIGN_VCENTER)
+
     def _align_dock_form_labels(self):
         """Same minimum width for all left labels so control columns line up (single vs twin rows)."""
         names = (
-            "label",
             "label_2",
-            "label_4",
-            "label_5",
-            "label_17",
             "label_15",
             "label_7",
             "label_9",
@@ -1288,11 +1562,14 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                     main_layout.setContentsMargins(4, 4, 4, 4)
                 v2 = getattr(self, "verticalLayout_2", None)
                 if v2 is not None:
-                    v2.setSpacing(4)
+                    v2.setSpacing(0)
                 lw = getattr(self, "lineListWidget", None)
                 if lw is not None:
                     lw.setMinimumHeight(140)
                     lw.setMaximumHeight(16777215)
+                    lw.setSpacing(0)
+                    # Do NOT set QListWidget stylesheets here: on Qt6 they override
+                    # QListWidgetItem backgrounds/foregrounds (orange/green status fills).
                 return
 
             pol_btn = QtWidgets.QSizePolicy(
@@ -1310,12 +1587,13 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
 
             main_layout = getattr(self, "verticalLayout", None)
             if main_layout is not None:
-                main_layout.setSpacing(0)
-                main_layout.setContentsMargins(1, 1, 1, 1)
+                main_layout.setSpacing(2)
+                main_layout.setContentsMargins(0, 0, 0, 0)
 
             v2 = getattr(self, "verticalLayout_2", None)
             if v2 is not None:
                 v2.setSpacing(0)
+                v2.setContentsMargins(0, 0, 0, 0)
 
             for name in (
                 "horizontalLayout_8", "horizontalLayout", "horizontalLayout_2", "horizontalLayout_4",
@@ -1326,14 +1604,39 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             ):
                 lay = getattr(self, name, None)
                 if lay is not None:
-                    lay.setSpacing(6)
-                    lay.setContentsMargins(0, 2, 0, 2)
+                    lay.setSpacing(4)
+                    lay.setContentsMargins(0, 0, 0, 0)
+
+            # Requested micro-gap: keep just 2 px between the top action row
+            # (Import/Calculate) and the Sail Lines Layer row.
+            # One rule for consistent rhythm: no per-row top offsets.
+            # Vertical gaps are controlled only by parent layout spacing.
+            for lay_name in (
+                "horizontalLayout", "horizontalLayout_5", "horizontalLayout_6",
+                "horizontalLayout_18", "horizontalLayout_14", "horizontalLayout_17",
+                "horizontalLayout_refresh_status", "horizontalLayout_7",
+                "horizontalLayout_10", "horizontalLayout_12", "horizontalLayout_13",
+            ):
+                lay = getattr(self, lay_name, None)
+                if lay is not None:
+                    lay.setContentsMargins(0, 0, 0, 0)
+                    lay.setSpacing(4)
+
+            # Fine-tuning requested:
+            # 1) No-Go Zone -> Deviation Clearance: +1 px.
+            lay_dev = getattr(self, "horizontalLayout_19", None)
+            if lay_dev is not None:
+                lay_dev.setContentsMargins(0, 1, 0, 0)
+            # 2) Line and Turn Speeds (H-L) -> First Line Heading: -1 px.
+            lay_first_heading = getattr(self, "horizontalLayout_14", None)
+            if lay_first_heading is not None:
+                lay_first_heading.setContentsMargins(0, -1, 0, 0)
 
             g_speed = getattr(self, "_speed_rows_grid", None)
             if g_speed is not None:
-                g_speed.setHorizontalSpacing(6)
+                g_speed.setHorizontalSpacing(4)
                 g_speed.setVerticalSpacing(2)
-                g_speed.setContentsMargins(0, 2, 0, 2)
+                g_speed.setContentsMargins(0, 0, 0, 0)
 
             lw = getattr(self, "lineListWidget", None)
             if lw is not None:
@@ -1343,7 +1646,10 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                 lw.setSizePolicy(
                     _QSP_PREFERRED, _QSP_EXPANDING
                 )
-                lw.setSpacing(2)
+                lw.setSpacing(0)
+                # Padding only on the viewport chrome — never QListWidget::item (breaks status fills).
+                lw.setStyleSheet(
+                    "QListWidget#lineListWidget{padding:0px;margin:0px;}")
 
             compact_h = 22
             for w in self.findChildren(QtWidgets.QPushButton):
@@ -1361,12 +1667,6 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             for w in self.findChildren(QtWidgets.QDateTimeEdit):
                 w.setFixedHeight(compact_h)
                 w.setSizePolicy(pol_input)
-                # Match base_ui: full date+time must stay clickable (hours not clipped).
-                try:
-                    mw = max(232, int(w.minimumWidth()))
-                    w.setMinimumWidth(mw)
-                except (TypeError, ValueError):
-                    w.setMinimumWidth(232)
             for w in self.findChildren(QgsMapLayerComboBox):
                 w.setFixedHeight(compact_h)
                 w.setMinimumHeight(0)
@@ -1381,16 +1681,18 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                     pass
 
             # Stylesheet beats many QGIS/Fusion default paddings on the content widget.
+            # Do NOT style QListWidget or QListWidget::item here: on Qt5 (QGIS 3.44) that
+            # routes item painting through the stylesheet engine and drops per-item
+            # setBackground (orange/green status rows). Tight list chrome is set on the
+            # list widget only, without ::item (see block above).
             root.setStyleSheet(
-                "QWidget#dockWidgetContents{font-size:9pt;}"
                 "QWidget#dockWidgetContents QLabel{margin:0px;padding:0px;}"
                 "QWidget#dockWidgetContents QPushButton{min-height:20px;max-height:22px;padding:2px 4px;margin:0px;}"
                 "QWidget#dockWidgetContents QComboBox{min-height:20px;max-height:22px;padding:2px 4px;margin:0px;}"
+                "QWidget#dockWidgetContents QToolButton{min-height:20px;max-height:22px;padding:2px 4px;margin:0px;}"
                 "QWidget#dockWidgetContents QSpinBox,QWidget#dockWidgetContents QDoubleSpinBox{"
                 "min-height:20px;max-height:22px;padding:2px 4px;margin:0px;}"
                 "QWidget#dockWidgetContents QDateTimeEdit{min-height:20px;padding:2px 4px;margin:0px;}"
-                "QWidget#dockWidgetContents QListWidget{padding:0px;margin:0px;}"
-                "QWidget#dockWidgetContents QListWidget::item{padding:2px 4px;margin:0px;}"
             )
         except Exception as e:
             log.debug("compact dock layout: %s", e)
@@ -1670,10 +1972,6 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             "last_csv_dir": getattr(self, "last_csv_dir", "") or "",
             "last_gpkg_dir": getattr(self, "last_gpkg_dir", "") or "",
         }
-        if hasattr(self, "startLineSpinBox"):
-            d["start_line"] = self.startLineSpinBox.value()
-        if hasattr(self, "endLineSpinBox"):
-            d["end_line"] = self.endLineSpinBox.value()
         if hasattr(self, "statusFilterComboBox"):
             d["status_filter_index"] = self.statusFilterComboBox.currentIndex()
             d["status_filter_text"] = self.statusFilterComboBox.currentText()
@@ -1775,6 +2073,35 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         gb.setCheckable(True)
         gb.setChecked(False)
         gb.setFlat(True)
+        # Without an explicit title color, some Qt styles (incl. dark fusion) paint
+        # QGroupBox::title with a strong highlight, so the line looks near-white / heavy.
+        _app = QApplication.instance()
+        _pal = _app.palette() if _app is not None else None
+        _window_text_role = getattr(QPalette, "WindowText", None)
+        if _window_text_role is None and hasattr(QPalette, "ColorRole"):
+            _window_text_role = QPalette.ColorRole.WindowText
+        _title_color = (
+            _pal.color(_window_text_role).name()
+            if (_pal is not None and _window_text_role is not None)
+            else "#d0d0d0"
+        )
+        _pt = int(round(_app.font().pointSizeF())) if _app is not None else 9
+        gb.setStyleSheet(
+            "QGroupBox#stabilityAdvancedGroupBox {"
+            "border: 0px;"
+            "margin-top: 7px;"
+            "padding-top: 2px;"
+            "}"
+            "QGroupBox#stabilityAdvancedGroupBox::title {"
+            "subcontrol-origin: margin;"
+            "left: 0px;"
+            f"color: {_title_color};"
+            f"font-size: {_pt}pt;"
+            "font-weight: normal;"
+            "padding: 0 2px;"
+            "}"
+        )
+        gb.setContentsMargins(0, 0, 0, 2)
         gb.setToolTip(
             "Optional. Expand only if: run-in lines do not match survey ends, or teardrop gives "
             "spurious loop warnings in the log. Uses map units — best with a projected CRS in meters."
@@ -1785,8 +2112,10 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         inner.setSpacing(1)
         inner.setContentsMargins(0, 0, 0, 0)
         outer = QtWidgets.QVBoxLayout(gb)
-        # Tight layout: no frame (flat group box), minimal gap to rows/buttons below.
-        outer.setContentsMargins(0, 0, 0, 0)
+        # Keep compact look, but preserve readable gaps:
+        # - top margin separates title from first row when expanded
+        # - bottom margin separates group from buttons below
+        outer.setContentsMargins(0, 5, 0, 4)
         outer.setSpacing(0)
         outer.addWidget(holder)
         holder.setVisible(False)
@@ -1800,7 +2129,7 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         def _add_row(label, spin, tip):
             row = QtWidgets.QHBoxLayout()
             row.setSpacing(4)
-            row.setContentsMargins(0, 0, 0, 1)
+            row.setContentsMargins(0, 0, 0, 0)
             lab = QtWidgets.QLabel(label)
             lab.setToolTip(tip)
             lab.setWordWrap(False)
@@ -1809,8 +2138,8 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             spin.setMinimumWidth(0)
             spin.setMaximumWidth(16777215)
             row.addWidget(lab)
-            row.addWidget(spin, 1)
-            row.setStretch(0, 0)
+            row.addWidget(spin)
+            row.setStretch(0, 1)
             row.setStretch(1, 1)
             inner.addLayout(row)
             self._stability_row_labels.append(lab)
@@ -1884,6 +2213,99 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         if not inserted:
             parent_layout.addWidget(gb)
         self._stability_group = gb
+
+    def _apply_requested_row_structure(self):
+        """Apply user-requested dock row order and hide Min/Max row."""
+        parent_layout = getattr(self, "verticalLayout", None)
+        if parent_layout is None:
+            return
+
+        def _index_of_layout(layout_obj):
+            if layout_obj is None:
+                return -1
+            for i in range(parent_layout.count()):
+                it = parent_layout.itemAt(i)
+                if it is not None and it.layout() is layout_obj:
+                    return i
+            return -1
+
+        def _index_of_widget(widget_obj):
+            if widget_obj is None:
+                return -1
+            for i in range(parent_layout.count()):
+                it = parent_layout.itemAt(i)
+                if it is not None and it.widget() is widget_obj:
+                    return i
+            return -1
+
+        def _move_layout_after(moving_layout, anchor_layout):
+            if moving_layout is None or anchor_layout is None:
+                return
+            from_idx = _index_of_layout(moving_layout)
+            anchor_idx = _index_of_layout(anchor_layout)
+            if from_idx < 0 or anchor_idx < 0:
+                return
+            item = parent_layout.takeAt(from_idx)
+            if item is None:
+                return
+            # Recompute anchor index after takeAt, because indices may shift.
+            anchor_idx = _index_of_layout(anchor_layout)
+            insert_idx = anchor_idx + 1 if anchor_idx >= 0 else parent_layout.count()
+            parent_layout.insertItem(insert_idx, item)
+
+        def _move_layout_after_widget(moving_layout, anchor_widget):
+            if moving_layout is None or anchor_widget is None:
+                return
+            from_idx = _index_of_layout(moving_layout)
+            anchor_idx = _index_of_widget(anchor_widget)
+            if from_idx < 0 or anchor_idx < 0:
+                return
+            item = parent_layout.takeAt(from_idx)
+            if item is None:
+                return
+            anchor_idx = _index_of_widget(anchor_widget)
+            insert_idx = anchor_idx + 1 if anchor_idx >= 0 else parent_layout.count()
+            parent_layout.insertItem(insert_idx, item)
+
+        # 1) Hide/remove "Min & Max Lines" row from the visual layout.
+        minmax_row = getattr(self, "horizontalLayout_2", None)
+        minmax_idx = _index_of_layout(minmax_row)
+        if minmax_idx >= 0:
+            parent_layout.takeAt(minmax_idx)
+        for w in (
+            getattr(self, "label_2", None),
+            getattr(self, "startLineSpinBox", None),
+            getattr(self, "endLineSpinBox", None),
+        ):
+            if w is not None:
+                w.hide()
+
+        # 2) Move Status row below Deviation Clearance.
+        _move_layout_after(
+            getattr(self, "horizontalLayout_4", None),
+            getattr(self, "horizontalLayout_19", None),
+        )
+
+        # 3) Move Turn Mode and First Line Heading rows below Start Time.
+        speed_holder = getattr(self, "_speed_rows_holder", None)
+        if speed_holder is not None:
+            _move_layout_after_widget(
+                getattr(self, "horizontalLayout_14", None),
+                speed_holder,
+            )
+        else:
+            _move_layout_after(
+                getattr(self, "horizontalLayout_14", None),
+                getattr(self, "horizontalLayout_13", None),
+            )
+        _move_layout_after(
+            getattr(self, "horizontalLayout_18", None),
+            getattr(self, "horizontalLayout_14", None),
+        )
+        _move_layout_after(
+            getattr(self, "horizontalLayout_17", None),
+            getattr(self, "horizontalLayout_18", None),
+        )
 
     def _apply_saved_dock_settings(self):
         if plugin_settings is None:
@@ -2014,12 +2436,6 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                 self.turnSpeedHighToLowDoubleSpinBox.setValue(
                     self.turnSpeedDoubleSpinBox.value())
 
-        sl = _si("start_line")
-        if sl is not None and hasattr(self, "startLineSpinBox"):
-            self.startLineSpinBox.setValue(sl)
-        el = _si("end_line")
-        if el is not None and hasattr(self, "endLineSpinBox"):
-            self.endLineSpinBox.setValue(el)
         fl = _si("first_line")
         if fl is not None and hasattr(self, "firstLineSpinBox"):
             self.firstLineSpinBox.setValue(fl)
@@ -2351,12 +2767,13 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         actions_btn = QToolButton(self)
         actions_btn.setObjectName("lineActionsButton")
         actions_btn.setText("Line Actions")
-        actions_btn.setPopupMode(_QT_INSTANT_POPUP)
+        actions_btn.setPopupMode(_QT_MENU_BUTTON_POPUP)
         actions_btn.setToolButtonStyle(_QT_TOOLBUTTON_TEXT_ONLY)
         menu = QtWidgets.QMenu(actions_btn)
         menu.addAction("Duplicate Line", self.handle_duplicate_line)
         menu.addAction("Remove Line", self.handle_remove_line)
         actions_btn.setMenu(menu)
+        actions_btn.clicked.connect(self.handle_duplicate_line)
 
         if idx >= 0:
             row.insertWidget(idx, actions_btn)
@@ -2388,10 +2805,27 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         # Match compact dock baseline used in _enforce_compact_dock_heights.
         uniform_h = 22
 
+        def _trim_edge_spacers(row):
+            # Remove previously injected edge spacers (from older layout tuning).
+            while row.count() > 0:
+                it0 = row.itemAt(0)
+                if it0 is not None and it0.widget() is None and it0.spacerItem() is not None:
+                    row.takeAt(0)
+                    continue
+                break
+            while row.count() > 0:
+                last = row.count() - 1
+                itn = row.itemAt(last)
+                if itn is not None and itn.widget() is None and itn.spacerItem() is not None:
+                    row.takeAt(last)
+                    continue
+                break
+
         def _normalize_row(layout_name):
             row = getattr(self, layout_name, None)
             if row is None:
                 return
+            _trim_edge_spacers(row)
             for i in range(row.count()):
                 it = row.itemAt(i)
                 w = it.widget() if it is not None else None
@@ -2411,12 +2845,12 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                             "}"
                             "QToolButton::menu-button {"
                             "border: none;"
-                            "width: 12px;"
+                            "width: 16px;"
                             "}"
                             "QToolButton::menu-indicator {"
                             "subcontrol-origin: padding;"
                             "subcontrol-position: center right;"
-                            "right: 3px;"
+                            "right: 2px;"
                             "}"
                         )
                 row.setStretch(i, 1)
@@ -2425,6 +2859,8 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         _normalize_row("horizontalLayout_refresh_status")
         _normalize_row("horizontalLayout_7")
         _normalize_row("horizontalLayout_6")
+
+        # No side spacers: keep rows fully dynamic across dock width.
 
     def _choose_csv_file(self):
         csv_filter = "CSV Files (*.csv *.txt);;All Files (*)"
@@ -2492,11 +2928,20 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         return int(float(txt))
 
     def _read_csv_sequence_mapping(self, csv_file_path, mapping):
-        """Read CSV and return list[(sequence, line_num)] sorted by sequence."""
+        """Read CSV and return list[(sequence, line_num, sp_bounds)] sorted by sequence.
+
+        sp_bounds is None when the row has only seq/line (short rows or missing station
+        columns) — the whole line uses default SP range from SPS. When the row includes
+        both station columns (defaults: 3rd and 4th, 0-based indices 2 and 3), sp_bounds
+        is (min_sp, max_sp); this maps to the dock SP trim (not GPKG edits).
+        """
         col_seq = int(mapping.get("col_sequence", 0))
         col_line = int(mapping.get("col_line", 1))
+        col_sp_start = int(mapping.get("col_start_sp", 2))
+        col_sp_end = int(mapping.get("col_end_sp", 3))
         header_lines = max(0, int(mapping.get("header_lines", 0)))
-        max_col = max(col_seq, col_line)
+        max_col_basic = max(col_seq, col_line)
+        max_col_sp = max(col_sp_start, col_sp_end)
 
         rows = []
         errors = 0
@@ -2514,7 +2959,7 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                     continue
                 if not row or all(not str(c).strip() for c in row):
                     continue
-                if len(row) <= max_col:
+                if len(row) <= max_col_basic:
                     errors += 1
                     continue
                 try:
@@ -2523,10 +2968,18 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                 except Exception:
                     errors += 1
                     continue
-                rows.append((seq_num, line_num))
+                sp_bounds = None
+                if len(row) > max_col_sp:
+                    try:
+                        a = self._parse_csv_cell_to_int(row[col_sp_start])
+                        b = self._parse_csv_cell_to_int(row[col_sp_end])
+                        sp_bounds = (min(a, b), max(a, b))
+                    except Exception:
+                        sp_bounds = None
+                rows.append((seq_num, line_num, sp_bounds))
         if errors:
             log.info("CSV import skipped %s row(s) due to parse issues", errors)
-        rows.sort(key=lambda x: x[0])
+        rows.sort(key=lambda x: (x[0], x[1]))
         return rows
 
     def _set_status_for_line_nums(self, line_nums, new_status):
@@ -2583,6 +3036,76 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                 target_layer.rollBack()
             raise
 
+    def _take_next_line_list_item_for_base(self, base_ln, used_line_ids):
+        """Return the next list row for this LineNum whose line_id is not yet used."""
+        if not hasattr(self, "lineListWidget"):
+            return None
+        for i in range(self.lineListWidget.count()):
+            it = self.lineListWidget.item(i)
+            try:
+                b = int(it.data(_QT_USER_ROLE + 2))
+            except (TypeError, ValueError):
+                continue
+            if b != base_ln:
+                continue
+            lid = str(it.data(_QT_USER_ROLE))
+            if lid not in used_line_ids:
+                return it
+        return None
+
+    def _find_any_line_list_item_for_base(self, base_ln):
+        """Return any list row for this LineNum (template for duplicating parts)."""
+        if not hasattr(self, "lineListWidget"):
+            return None
+        for i in range(self.lineListWidget.count()):
+            it = self.lineListWidget.item(i)
+            try:
+                b = int(it.data(_QT_USER_ROLE + 2))
+            except (TypeError, ValueError):
+                continue
+            if b == base_ln:
+                return it
+        return None
+
+    def _duplicate_line_list_item_after(self, template_item):
+        """Insert a new part row after template_item (same logic as Duplicate Line for one row)."""
+        line_id = template_item.data(_QT_USER_ROLE)
+        status = template_item.data(_QT_USER_ROLE + 1)
+        base_ln = template_item.data(_QT_USER_ROLE + 2)
+        if line_id is None or base_ln is None:
+            return None
+
+        max_copy = -1
+        for i in range(self.lineListWidget.count()):
+            it = self.lineListWidget.item(i)
+            if it.data(_QT_USER_ROLE + 2) == base_ln:
+                try:
+                    if '_' in str(it.data(_QT_USER_ROLE)):
+                        max_copy = max(max_copy, int(
+                            str(it.data(_QT_USER_ROLE)).split('_')[1]))
+                    else:
+                        max_copy = max(max_copy, 0)
+                except ValueError:
+                    pass
+
+        new_copy_idx = max(0, max_copy) + 1
+        new_line_id = f"{base_ln}_{new_copy_idx}"
+
+        old_bounds = self.custom_line_sp_bounds.get(
+            line_id) or self.default_line_sp_bounds.get(base_ln)
+        if old_bounds:
+            self.custom_line_sp_bounds[new_line_id] = list(old_bounds)
+
+        current_row = self.lineListWidget.row(template_item)
+        bounds = self.custom_line_sp_bounds.get(new_line_id)
+        new_item = QListWidgetItem(self._format_line_list_item_text(
+            new_line_id, base_ln, status, sp_bounds=bounds))
+        new_item.setData(_QT_USER_ROLE, new_line_id)
+        new_item.setData(_QT_USER_ROLE + 1, status)
+        new_item.setData(_QT_USER_ROLE + 2, base_ln)
+        self.lineListWidget.insertItem(current_row + 1, new_item)
+        return new_item
+
     def _apply_csv_sequence_import(self, csv_file_path, mapping):
         """Mark imported lines as To Be Acquired and queue them in imported sequence order."""
         if not self._require_sail_layer("Import CSV"):
@@ -2603,12 +3126,7 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
                                 "No valid rows found in CSV.")
             return
 
-        imported_line_to_seq = {}
-        for seq_num, line_num in seq_rows:
-            prev = imported_line_to_seq.get(line_num)
-            if prev is None or seq_num < prev:
-                imported_line_to_seq[line_num] = seq_num
-        imported_lines = sorted(imported_line_to_seq.keys())
+        imported_lines = sorted({ln for _s, ln, _b in seq_rows})
 
         try:
             updated_pts = self._set_status_for_line_nums(
@@ -2623,38 +3141,51 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         self._selection_sequence = []
         self._selection_sequence_numbers = {}
         self.handle_apply_filter(True)
-        by_base_line = {}
-        if hasattr(self, "lineListWidget"):
-            for i in range(self.lineListWidget.count()):
-                it = self.lineListWidget.item(i)
-                try:
-                    base_ln = int(it.data(_QT_USER_ROLE + 2))
-                except (TypeError, ValueError):
-                    continue
-                by_base_line.setdefault(base_ln, it)
 
         ordered_line_ids = []
         ordered_sequence_values = {}
-        for line_num, _seq_num in sorted(imported_line_to_seq.items(), key=lambda kv: kv[1]):
-            item = by_base_line.get(line_num)
+        used_line_ids = set()
+
+        for seq_num, line_num, sp_bounds in seq_rows:
+            item = self._take_next_line_list_item_for_base(
+                line_num, used_line_ids)
             if item is None:
-                continue
+                template = self._find_any_line_list_item_for_base(line_num)
+                if template is None:
+                    log.info(
+                        "CSV import: line %s not in filtered list, skipping row seq=%s",
+                        line_num, seq_num)
+                    continue
+                item = self._duplicate_line_list_item_after(template)
+                if item is None:
+                    continue
+
             line_id = str(item.data(_QT_USER_ROLE))
+            if sp_bounds is not None:
+                self.custom_line_sp_bounds[line_id] = (
+                    int(sp_bounds[0]), int(sp_bounds[1]))
+            else:
+                if line_id in self.custom_line_sp_bounds:
+                    del self.custom_line_sp_bounds[line_id]
+
+            used_line_ids.add(line_id)
             ordered_line_ids.append(line_id)
-            ordered_sequence_values[line_id] = int(_seq_num)
+            ordered_sequence_values[line_id] = int(seq_num)
             item.setSelected(True)
+
         self._selection_sequence = ordered_line_ids
         self._selection_sequence_numbers = ordered_sequence_values
 
         self._refresh_line_list_item_labels()
         self._sync_first_line_spinbox_from_shooting_queue()
 
+        n_unique_lines = len(imported_lines)
         QMessageBox.information(
             self,
             "CSV Import",
-            f"Imported {len(imported_line_to_seq)} line(s) from CSV.\n"
+            f"Imported {len(seq_rows)} row(s) from CSV ({n_unique_lines} unique line number(s)).\n"
             f"Updated {updated_pts} SPS point(s) to 'To Be Acquired'.\n"
-            f"Queued {len(ordered_line_ids)} visible line(s) by imported sequence.",
+            f"Queued {len(ordered_line_ids)} list row(s) by imported sequence.",
         )
 
     def handle_sps_import_button(self):
@@ -3707,12 +4238,6 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             self._refresh_vector_layer_data(lyr)
             if hasattr(self, "sps_layer_combo"):
                 self.sps_layer_combo.setLayer(lyr)
-                QtCore.QTimer.singleShot(
-                    0,
-                    lambda lyr_ref=lyr: self._sync_min_max_line_spinboxes_from_sps_layer(
-                        lyr_ref
-                    ),
-                )
             return True
 
         layer = QgsVectorLayer(uri, table_name, "ogr")
@@ -3722,12 +4247,6 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
         self._add_layer_to_lookahead_group(layer)
         if hasattr(self, "sps_layer_combo"):
             self.sps_layer_combo.setLayer(layer)
-            QtCore.QTimer.singleShot(
-                0,
-                lambda lyr_ref=layer: self._sync_min_max_line_spinboxes_from_sps_layer(
-                    lyr_ref
-                ),
-            )
         log.info(f"Layer '{table_name}' added to project after append")
         return True
 
@@ -4617,42 +5136,8 @@ class LookaheadDockWidgetImpl(QtWidgets.QDockWidget, Ui_OBNPlannerDockWidgetBase
             return
 
         for item in reversed(selected_items):
-            line_id = item.data(_QT_USER_ROLE)
-            status = item.data(_QT_USER_ROLE + 1)
-            base_ln = item.data(_QT_USER_ROLE + 2)
-
-            if line_id is None or base_ln is None:
+            if self._duplicate_line_list_item_after(item) is None:
                 continue
-
-            max_copy = -1
-            for i in range(self.lineListWidget.count()):
-                it = self.lineListWidget.item(i)
-                if it.data(_QT_USER_ROLE + 2) == base_ln:
-                    try:
-                        if '_' in str(it.data(_QT_USER_ROLE)):
-                            max_copy = max(max_copy, int(
-                                str(it.data(_QT_USER_ROLE)).split('_')[1]))
-                        else:
-                            max_copy = max(max_copy, 0)
-                    except ValueError:
-                        pass
-
-            new_copy_idx = max(0, max_copy) + 1
-            new_line_id = f"{base_ln}_{new_copy_idx}"
-
-            old_bounds = self.custom_line_sp_bounds.get(
-                line_id) or self.default_line_sp_bounds.get(base_ln)
-            if old_bounds:
-                self.custom_line_sp_bounds[new_line_id] = list(old_bounds)
-
-            current_row = self.lineListWidget.row(item)
-            bounds = self.custom_line_sp_bounds.get(new_line_id)
-            new_item = QListWidgetItem(self._format_line_list_item_text(
-                new_line_id, base_ln, status, sp_bounds=bounds))
-            new_item.setData(_QT_USER_ROLE, new_line_id)
-            new_item.setData(_QT_USER_ROLE + 1, status)
-            new_item.setData(_QT_USER_ROLE + 2, base_ln)
-            self.lineListWidget.insertItem(current_row + 1, new_item)
 
         self._refresh_line_list_item_labels()
 

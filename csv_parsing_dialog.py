@@ -21,11 +21,13 @@ class CsvParsingDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("CSV Parsing Helper")
-        self.resize(560, 190)
+        self.resize(560, 280)
 
         root = QtWidgets.QVBoxLayout(self)
         info = QtWidgets.QLabel(
-            "Select CSV file and set columns for Sequence and Line.\n"
+            "Set columns for Sequence and Line. Optional: Start SP and End SP (shot point / station numbers).\n"
+            "If a row has values in both SP columns, import trims the line to that SP range in the dock "
+            "(same as double-click SP edit; GPKG is unchanged). Two-column rows use the full line.\n"
             "Header lines default is 0 for files without a header."
         )
         info.setWordWrap(True)
@@ -55,11 +57,23 @@ class CsvParsingDialog(QtWidgets.QDialog):
         self.line_col_spin.setValue(1)
         grid.addWidget(self.line_col_spin, 1, 1)
 
-        grid.addWidget(QtWidgets.QLabel("Header lines to skip:"), 2, 0)
+        grid.addWidget(QtWidgets.QLabel("Start SP column (0-based, optional):"), 2, 0)
+        self.sp_start_col_spin = QtWidgets.QSpinBox(self)
+        self.sp_start_col_spin.setRange(0, 200)
+        self.sp_start_col_spin.setValue(2)
+        grid.addWidget(self.sp_start_col_spin, 2, 1)
+
+        grid.addWidget(QtWidgets.QLabel("End SP column (0-based, optional):"), 3, 0)
+        self.sp_end_col_spin = QtWidgets.QSpinBox(self)
+        self.sp_end_col_spin.setRange(0, 200)
+        self.sp_end_col_spin.setValue(3)
+        grid.addWidget(self.sp_end_col_spin, 3, 1)
+
+        grid.addWidget(QtWidgets.QLabel("Header lines to skip:"), 4, 0)
         self.header_spin = QtWidgets.QSpinBox(self)
         self.header_spin.setRange(0, 5000)
         self.header_spin.setValue(0)
-        grid.addWidget(self.header_spin, 2, 1)
+        grid.addWidget(self.header_spin, 4, 1)
 
         actions = QtWidgets.QHBoxLayout()
         actions.addStretch()
@@ -81,6 +95,8 @@ class CsvParsingDialog(QtWidgets.QDialog):
         for key, spin in (
             ("col_sequence", self.seq_col_spin),
             ("col_line", self.line_col_spin),
+            ("col_start_sp", self.sp_start_col_spin),
+            ("col_end_sp", self.sp_end_col_spin),
             ("header_lines", self.header_spin),
         ):
             try:
@@ -108,6 +124,8 @@ class CsvParsingDialog(QtWidgets.QDialog):
             "file_path": self.file_edit.text().strip(),
             "col_sequence": int(self.seq_col_spin.value()),
             "col_line": int(self.line_col_spin.value()),
+            "col_start_sp": int(self.sp_start_col_spin.value()),
+            "col_end_sp": int(self.sp_end_col_spin.value()),
             "header_lines": int(self.header_spin.value()),
         }
 

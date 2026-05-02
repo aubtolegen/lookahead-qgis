@@ -27,15 +27,24 @@ LOOKAHEAD_HELP_HTML_EN = """
 <h3>Buttons (top to bottom)</h3>
 <ul>
   <li><b>Import SPS File…</b> — wizard to map columns in the SPS text file.</li>
-  <li><b>Import CSV ▼</b> — import Sequence/Line plan from CSV:
-    quick mode uses columns 0/1 with 0 header rows;
-    parsing mode lets you set file, Sequence column, Line column and header rows.
-    Parsing import remembers the last mapping + file path and auto-imports on next click when that file still exists.
-    If no CSV file path is saved (or the file is missing), it asks you to choose a CSV file each time.
-    This fallback selection is used only for the current import and is not written back to parsing settings.
-    Default separator is <b>TAB</b>; comma (<b>,</b>), semicolon (<b>;</b>) and pipe (<b>|</b>) are also supported.
-    Imported lines are marked <b>To Be Acquired</b> and queued by CSV sequence.
-    CSV Seq values are shown as imported; after status removals, the remaining queue is renumbered contiguously.</li>
+  <li><b>Import CSV ▼</b> — load a simple plan: which line to shoot and in what order (<b>sequence</b> and <b>line number</b>).
+    <b>Quick import</b> expects sequence in column 0, line in column 1, no header row.
+    <b>CSV parsing…</b> opens a small dialog: pick the file, which columns are sequence, line, and (optionally) start/end shot point (SP), and how many header rows to skip.
+    Imported lines get status <b>To Be Acquired</b> and are placed in the shooting queue in CSV order; sequence numbers from the file are shown in the list.
+    The last used file and column mapping are remembered for the next import (if the file is still there). Otherwise you choose a CSV each time — that choice is not saved as the default path.
+    Separators: usually <b>TAB</b>; comma, semicolon and pipe also work (detected automatically).
+    After you clear status on some lines, the remaining queue is renumbered in order.</li>
+</ul>
+
+<h4 style="margin-top:10px;margin-bottom:6px;">Whole line or only part of it (SP range) — since v2.4</h4>
+<ul style="margin-top:0;">
+  <li><b>Only sequence + line</b> (or a short row without SP columns): that row brings in the <b>whole</b> sail line — same as older behaviour.</li>
+  <li><b>Sequence, line, start SP, end SP</b> (column order can be set in the dialog): that row means “work only between these shot points”. It is the same setting as opening the line in the list and choosing an SP range (double-click). Your GeoPackage layer is <b>not</b> modified — only the plan in the dock.</li>
+  <li>Same line number <b>several times</b> with different SP ranges? Use <b>several CSV rows</b> with the same line — you get several list entries, like using <b>Duplicate Line</b> after import.</li>
+</ul>
+
+<h3>More dock controls</h3>
+<ul style="margin-top:0;">
   <li><b>Calculate Headings</b> — recompute bearing from point order on the selected layer.</li>
   <li><b>Refresh List</b> — rebuild the line list from <b>Min &amp; Max Lines</b>, Status and the current SPS layer.</li>
   <li><b>Remove Status</b> — clear <b>Status</b> on SPS points for selected list lines.</li>
@@ -168,15 +177,24 @@ LOOKAHEAD_HELP_HTML_RU = """
 <h3>Кнопки (сверху вниз)</h3>
 <ul>
   <li><b>Import SPS File…</b> — мастер импорта и привязки колонок в тексте SPS.</li>
-  <li><b>Import CSV ▼</b> — импорт плана Sequence/Line из CSV:
-    быстрый режим берёт колонки 0/1 и 0 строк шапки;
-    режим parsing позволяет выбрать файл, колонку Sequence, колонку Line и число строк шапки.
-    В parsing запоминаются последние маппинг + путь к файлу; при следующем нажатии импорт стартует сразу, если файл существует.
-    Если путь к CSV не сохранён (или файл не найден), каждый раз откроется выбор CSV-файла.
-    Такой fallback-выбор используется только для текущего импорта и не записывается обратно в parsing-настройки.
-    Разделитель по умолчанию — <b>TAB</b>; также поддерживаются запятая (<b>,</b>), точка с запятой (<b>;</b>) и вертикальная черта (<b>|</b>).
-    Импортированные линии помечаются как <b>To Be Acquired</b> и добавляются в очередь по sequence из CSV.
-    Seq из CSV показывается как импортирован; после Remove Status оставшаяся очередь перенумеровывается подряд.</li>
+  <li><b>Import CSV ▼</b> — загрузить простой план: в каком порядке и какие линии снимать (колонки <b>порядок / sequence</b> и <b>номер линии</b>).
+    <b>Быстрый импорт</b>: порядок в колонке 0, линия в колонке 1, без строки заголовка.
+    <b>Разбор CSV…</b> открывает окно: файл, какие колонки считать sequence, линией и (по желанию) начальным и конечным SP, сколько строк заголовка пропустить.
+    После импорта линии получают статус <b>To Be Acquired</b> и попадают в очередь съёмки в порядке из файла; номера sequence из CSV видны в списке.
+    Обычно запоминаются последний файл и привязка колонок — следующий раз импорт может пойти сразу, если файл на месте. Если нет — каждый раз выбираете CSV вручную; этот разовый выбор в настройки по умолчанию не пишется.
+    Разделитель чаще всего <b>TAB</b>; также подойдут запятая, «;» и «|» (определяются автоматически).
+    После <b>Remove Status</b> у выбранных линий оставшаяся очередь перенумеруется по порядку.</li>
+</ul>
+
+<h4 style="margin-top:10px;margin-bottom:6px;">Целая линия или только кусок по SP — с версии 2.4</h4>
+<ul style="margin-top:0;">
+  <li><b>Только порядок и номер линии</b> (или короткая строка без SP): в план попадает <b>вся</b> линия — как раньше.</li>
+  <li><b>Порядок, линия, начальный SP, конечный SP</b> (номера колонок задаёте в окне разбора): эта строка значит «снимать только между этими точками». Это то же самое, что задать диапазон SP в доке через <b>двойной щелчок</b> по строке списка. Слой в GPKG <b>не трогается</b> — меняется только план в панели.</li>
+  <li>Одну и ту же линию <b>несколько раз</b> с разными участками SP? Сделайте в CSV <b>несколько строк</b> с одним номером линии — в списке появятся отдельные строки, по смыслу как после <b>Duplicate Line</b>.</li>
+</ul>
+
+<h3>Остальные кнопки дока</h3>
+<ul style="margin-top:0;">
   <li><b>Calculate Headings</b> — пересчёт азимута по точкам выбранного слоя. Используйте после правок в таблице.</li>
   <li><b>Refresh List</b> — перестроить список линий по фильтрам Min/Max, Status и выбранному SPS.</li>
   <li><b>Remove Status</b> — сбросить поле Status у выбранных в списке линий.</li>
