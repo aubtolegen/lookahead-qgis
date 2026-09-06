@@ -47,3 +47,8 @@ Lookahead is a QGIS plugin for planning, optimizing, and simulating OBN source-l
 
 - Main project license: GNU GPL-2.0 (`LICENSE`)
 - Third-party / upstream attribution: `THIRD_PARTY_NOTICES.md`
+
+## Screenshots
+- ![Photo 1](images/photo1.png)
+
+- ![Photo 2](images/photo2.png)
