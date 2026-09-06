@@ -36,7 +36,6 @@ Lookahead is a QGIS plugin for planning, optimizing, and simulating OBN source-l
 
 ## Support / Bug Reports
 
-- Contact: `aub.tolegen@gmail.com`
 - When reporting issues, include:
   - QGIS version
   - OS version
