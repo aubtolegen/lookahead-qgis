@@ -49,6 +49,6 @@ Lookahead is a QGIS plugin for planning, optimizing, and simulating OBN source-l
 - Third-party / upstream attribution: `THIRD_PARTY_NOTICES.md`
 
 ## Screenshots
-- ![Photo 1](images/photo1.png)
+- ![Photo 1](photo1.png)
 
-- ![Photo 2](images/photo2.png)
+- ![Photo 2](photo2.png)
