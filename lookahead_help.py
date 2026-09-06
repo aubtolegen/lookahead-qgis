@@ -41,6 +41,12 @@ LOOKAHEAD_HELP_HTML_EN = """
   <li><b>Only sequence + line</b> (or a short row without SP columns): that row brings in the <b>whole</b> sail line — same as older behaviour.</li>
   <li><b>Sequence, line, start SP, end SP</b> (column order can be set in the dialog): that row means “work only between these shot points”. It is the same setting as opening the line in the list and choosing an SP range (double-click). Your GeoPackage layer is <b>not</b> modified — only the plan in the dock.</li>
   <li>Same line number <b>several times</b> with different SP ranges? Use <b>several CSV rows</b> with the same line — you get several list entries, like using <b>Duplicate Line</b> after import.</li>
+  <li><b>Lookahead XLSX</b> (third item on <b>Import CSV ▼</b>) — select your <b>Sail Lines layer (*.gpkg)</b> at the top of the dock first (your project file; chief nav may use a different path). Then load the workbook from <b>Finalize → Export XLSX</b>.
+    The <b>Line</b> column uses base line numbers only (no _1 / _2 suffix). The same line number on several rows means duplicate parts with different <b>Start SP</b> / <b>End SP</b> (like CSV import).
+    Columns <b>K–T</b> (simulation start, global turn radius, run-in/out, speeds, acquisition mode, and direction code for the first line) appear only on the <b>first data row</b> — they are dock-wide defaults. Other lines use column <b>I (Direction)</b> for pass direction.
+    Columns <b>U–V</b> (<b>Indiv Turn Radius (m)</b>, <b>Indiv Turn Mode</b>) are on every line that has a turn after it (from <b>Individual Turn Editor</b>); the last row is blank.
+    The <b>Custom Turns</b> sheet (and JSON in Lookahead Settings) also stores the same per-leg overrides for round-trip.
+    Import restores dock options and per-leg turns (not the chief’s GPKG path), replaces <b>Lookahead</b> linework when geometry sheets are present, and queues the sequence. Run <b>Run Simulation</b> then <b>Finalize</b> to refresh timing; turn overrides apply on the next path rebuild.</li>
 </ul>
 
 <h3>More dock controls</h3>
@@ -75,6 +81,7 @@ LOOKAHEAD_HELP_HTML_EN = """
   <li><b>Direction</b> — pass direction per line; <b>Line Change</b> is the next column and shows transition time to the <b>next</b> line: current <b>Run-Out</b> + next <b>Turn</b> + next <b>Run-In</b>.</li>
   <li>The last row has no next line, so <b>Line Change</b> is left empty.</li>
   <li><b>Estimated Line Change Time</b> is the sum of all line-to-line transitions in the sequence.</li>
+  <li><b>Export XLSX</b> — <b>Shooting Plan</b> (finalize table) plus <b>Lookahead Settings</b> (speeds, turn mode, run-in/out, layers, and related dock options). Other navigators use <b>Import CSV ▼ → Lookahead XLSX</b> on the same GPKG project.</li>
 </ul>
 
 <h3>Individual Turn Editor (Finalize Lookahead Plan)</h3>
@@ -184,6 +191,8 @@ LOOKAHEAD_HELP_HTML_RU = """
     Обычно запоминаются последний файл и привязка колонок — следующий раз импорт может пойти сразу, если файл на месте. Если нет — каждый раз выбираете CSV вручную; этот разовый выбор в настройки по умолчанию не пишется.
     Разделитель чаще всего <b>TAB</b>; также подойдут запятая, «;» и «|» (определяются автоматически).
     После <b>Remove Status</b> у выбранных линий оставшаяся очередь перенумеруется по порядку.</li>
+  <li><b>Lookahead XLSX</b> (третий пункт <b>Import CSV ▼</b>) — сначала выберите слой <b>Sail Lines (*.gpkg)</b> вверху панели (ваш файл проекта). Затем план из <b>Finalize → Export XLSX</b>.
+    Колонка <b>Line</b> — только базовый номер линии; повтор того же номера = части с разными <b>Start SP</b> / <b>End SP</b>.</li>
 </ul>
 
 <h4 style="margin-top:10px;margin-bottom:6px;">Целая линия или только кусок по SP — с версии 2.4</h4>

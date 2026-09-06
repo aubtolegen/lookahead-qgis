@@ -1,6 +1,7 @@
 import json
 import os
 from qgis.PyQt.QtCore import QSettings
+from .qt_compat import swallow_exc
 
 SETTINGS_FILENAME = "lookahead_settings.json"
 LEGACY_SPS_FILENAME = "sps_preplot_parsing_config.json"
@@ -96,10 +97,10 @@ def load_settings():
                 try:
                     os.remove(path)
                 except OSError:
-                    pass
+                    swallow_exc()
                 return data
         except (OSError, ValueError, TypeError):
-            pass
+            swallow_exc()
 
     sps = None
     legacy = os.path.join(_plugin_dir(), LEGACY_SPS_FILENAME)
@@ -110,7 +111,7 @@ def load_settings():
             if isinstance(raw, dict):
                 sps = raw
         except (OSError, ValueError, TypeError):
-            pass
+            swallow_exc()
 
     dock = {}
     _merge_dock_stability(dock)
@@ -151,7 +152,7 @@ def clear_sps_parsing():
         if os.path.isfile(legacy):
             os.remove(legacy)
     except OSError:
-        pass
+        swallow_exc()
 
 
 def get_csv_parsing():

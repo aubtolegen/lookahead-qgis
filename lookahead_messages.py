@@ -1,32 +1,19 @@
-from qgis.core import Qgis
-from qgis.PyQt.QtCore import Qt, QTimer
+from qgis.PyQt.QtCore import QTimer
 from qgis.PyQt.QtWidgets import QMessageBox as _QT_MSG_BOX
 
-MESSAGE_BAR_DURATION_SEC = 4
+from .qt_compat import (
+    MSGBOX_OK as _MSGBOX_OK,
+    MSGBOX_ICON_WARNING as _MSGBOX_ICON_WARNING,
+    MSGBOX_ICON_CRITICAL as _MSGBOX_ICON_CRITICAL,
+    MSGBOX_ICON_INFORMATION as _MSGBOX_ICON_INFORMATION,
+    QT_NON_MODAL as _QT_NON_MODAL,
+    QT_WA_DELETE_ON_CLOSE as _QT_WA_DELETE_ON_CLOSE,
+    QGIS_INFO,
+    QGIS_WARNING,
+    QGIS_CRITICAL,
+)
 
-try:
-    _MSGBOX_OK = _QT_MSG_BOX.StandardButton.Ok
-except AttributeError:
-    _MSGBOX_OK = _QT_MSG_BOX.Ok
-
-try:
-    _MSGBOX_ICON_WARNING = _QT_MSG_BOX.Icon.Warning
-    _MSGBOX_ICON_CRITICAL = _QT_MSG_BOX.Icon.Critical
-    _MSGBOX_ICON_INFORMATION = _QT_MSG_BOX.Icon.Information
-except AttributeError:
-    _MSGBOX_ICON_WARNING = _QT_MSG_BOX.Warning
-    _MSGBOX_ICON_CRITICAL = _QT_MSG_BOX.Critical
-    _MSGBOX_ICON_INFORMATION = _QT_MSG_BOX.Information
-
-try:
-    _QT_NON_MODAL = Qt.WindowModality.NonModal
-except AttributeError:
-    _QT_NON_MODAL = Qt.NonModal
-
-try:
-    _QT_WA_DELETE_ON_CLOSE = Qt.WidgetAttribute.WA_DeleteOnClose
-except AttributeError:
-    _QT_WA_DELETE_ON_CLOSE = Qt.WA_DeleteOnClose
+MESSAGE_BAR_DURATION_SEC = 7
 
 
 def _msgbox_attr(name):
@@ -58,9 +45,9 @@ def notify_fallback_dialog(parent, title, text, level, duration_sec=MESSAGE_BAR_
     dlg = _QT_MSG_BOX(parent)
     dlg.setWindowTitle(str(title))
     dlg.setText(str(text))
-    if level == Qgis.Warning:
+    if level == QGIS_WARNING:
         dlg.setIcon(_MSGBOX_ICON_WARNING)
-    elif level == Qgis.Critical:
+    elif level == QGIS_CRITICAL:
         dlg.setIcon(_MSGBOX_ICON_CRITICAL)
     else:
         dlg.setIcon(_MSGBOX_ICON_INFORMATION)
@@ -79,17 +66,17 @@ class LookaheadMessageBoxProxy:
         return _msgbox_attr(name)
 
     def information(self, parent, title, text, *args, **kwargs):
-        if parent is not None and notify_from_parent_chain(parent, title, text, Qgis.Info):
+        if parent is not None and notify_from_parent_chain(parent, title, text, QGIS_INFO):
             return kwargs.get("defaultButton", _MSGBOX_OK)
         return _QT_MSG_BOX.information(parent, title, text, *args, **kwargs)
 
     def warning(self, parent, title, text, *args, **kwargs):
-        if parent is not None and notify_from_parent_chain(parent, title, text, Qgis.Warning):
+        if parent is not None and notify_from_parent_chain(parent, title, text, QGIS_WARNING):
             return kwargs.get("defaultButton", _MSGBOX_OK)
         return _QT_MSG_BOX.warning(parent, title, text, *args, **kwargs)
 
     def critical(self, parent, title, text, *args, **kwargs):
-        if parent is not None and notify_from_parent_chain(parent, title, text, Qgis.Critical):
+        if parent is not None and notify_from_parent_chain(parent, title, text, QGIS_CRITICAL):
             return kwargs.get("defaultButton", _MSGBOX_OK)
         return _QT_MSG_BOX.critical(parent, title, text, *args, **kwargs)
 

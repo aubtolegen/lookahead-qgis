@@ -3,7 +3,7 @@ name=Lookahead
 qgisMinimumVersion=3.16
 qgisMaximumVersion=4.99
 description=Plan, optimize, and simulate OBN source-line acquisition in QGIS with interactive sequence editing, directional turn control, and speed-aware timeline playback.
-version=2.4
+version=2.8
 author=Tolegen
 email=aub.tolegen@gmail.com
 
@@ -18,6 +18,20 @@ repository=https://github.com/aubtolegen/lookahead-qgis
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
 changelog=Changelog:
+    2.8
+    - Sequence Editor: mark a line Acquired to hide it and the following turn on the canvas
+    2.7
+    - Overall optimizations and bug fixes
+    - Increased speed and responsiveness with many thousands of survey points
+    2.6
+    - Fixed the Import CSV menu on the dock so its actions map correctly.
+    - The plan maker can share an acquisition plan with the team. The XLSX exported from Finalize lets another user replicate the Lookahead plan on their QGIS canvas (each person selects their own Sail Lines GPKG first).
+    - The XLSX plan now lists plain line numbers for duplicated lines (1234, not 1234_1). If the same line appears on several rows, Lookahead treats each row as a separate part with its own shot-point range.
+    - Shooting Plan columns K–T export/import dock settings (direction code, start time, speeds, turn radius, run-in/out, turn mode). The export file also carries map linework to rebuild Lookahead layers when needed.
+    - Tips and warnings in the message bar (for example, reminders to pick a Sail Lines layer) stay on screen for 30 seconds instead of disappearing after a few seconds.
+    2.5
+    - Fixed sequence numbering in the finalize list
+    - First sequence number (First Seq) range extended to 1–99999
     2.4
     - Added CSV import for partial lines
     - Dock panel elements optimisation

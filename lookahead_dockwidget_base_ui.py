@@ -1,16 +1,10 @@
 from qgis.PyQt import QtCore, QtWidgets
 
-try:
-    _QT_LEFT_TO_RIGHT = QtCore.Qt.LayoutDirection.LeftToRight
-except AttributeError:
-    _QT_LEFT_TO_RIGHT = QtCore.Qt.LeftToRight
-
-try:
-    _QT_ALIGN_LEADING = QtCore.Qt.AlignmentFlag.AlignLeading
-    _QT_ALIGN_VCENTER = QtCore.Qt.AlignmentFlag.AlignVCenter
-except AttributeError:
-    _QT_ALIGN_LEADING = QtCore.Qt.AlignLeading
-    _QT_ALIGN_VCENTER = QtCore.Qt.AlignVCenter
+from .qt_compat import (
+    QT_LEFT_TO_RIGHT as _QT_LEFT_TO_RIGHT,
+    QT_ALIGN_LEADING as _QT_ALIGN_LEADING,
+    QT_ALIGN_VCENTER as _QT_ALIGN_VCENTER,
+)
 
 
 class Ui_OBNPlannerDockWidgetBase(object):
@@ -251,8 +245,9 @@ class Ui_OBNPlannerDockWidgetBase(object):
         self.firstLineSpinBox.setObjectName("firstLineSpinBox")
         self.horizontalLayout_13.addWidget(self.firstLineSpinBox)
         self.firstSeqComboBox = QtWidgets.QSpinBox(self.dockWidgetContents)
-        self.firstSeqComboBox.setMinimum(100)
-        self.firstSeqComboBox.setMaximum(9999)
+        self.firstSeqComboBox.setMinimum(1)
+        self.firstSeqComboBox.setMaximum(99999)
+        self.firstSeqComboBox.setValue(1)
         self.firstSeqComboBox.setObjectName("firstSeqComboBox")
         self.horizontalLayout_13.addWidget(self.firstSeqComboBox)
         self.verticalLayout.addLayout(self.horizontalLayout_13)

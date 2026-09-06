@@ -1,21 +1,15 @@
 from qgis.PyQt import QtWidgets
-from qgis.PyQt.QtCore import Qt, QRect, QSize
+from qgis.PyQt.QtCore import QRect, QSize
 from qgis.PyQt.QtGui import QFont, QPainter
 
 from . import plugin_settings
 from .lookahead_messages import QMessageBox
-
-try:
-    _QT_ALIGN_CENTER = Qt.AlignmentFlag.AlignCenter
-    _QT_ALIGN_RIGHT = Qt.AlignmentFlag.AlignRight
-except AttributeError:
-    _QT_ALIGN_CENTER = Qt.AlignCenter
-    _QT_ALIGN_RIGHT = Qt.AlignRight
-
-try:
-    _QPT_NO_WRAP = QtWidgets.QPlainTextEdit.LineWrapMode.NoWrap
-except AttributeError:
-    _QPT_NO_WRAP = QtWidgets.QPlainTextEdit.NoWrap
+from .qt_compat import (
+    swallow_exc,
+    QT_ALIGN_CENTER as _QT_ALIGN_CENTER,
+    QT_ALIGN_RIGHT as _QT_ALIGN_RIGHT,
+    QPT_NO_WRAP as _QPT_NO_WRAP,
+)
 
 
 def load_saved_sps_mapping():
@@ -219,7 +213,7 @@ class SpsParsingDialog(QtWidgets.QDialog):
                 try:
                     self._result[wk] = int(saved[wk])
                 except (TypeError, ValueError):
-                    pass
+                    swallow_exc()
         for key, lbl in self.labels.items():
             lbl.setText(self._label_text_for_key(key))
 

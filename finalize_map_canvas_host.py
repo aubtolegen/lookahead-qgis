@@ -11,28 +11,16 @@ try:
 except ImportError:  # QGIS < 3.30
     Qgis = None
 
-try:
-    _QT_ALIGN_CENTER = QtCore.Qt.AlignmentFlag.AlignCenter
-    _QT_ALIGN_HCENTER = QtCore.Qt.AlignmentFlag.AlignHCenter
-    _QT_ALIGN_TOP = QtCore.Qt.AlignmentFlag.AlignTop
-except AttributeError:
-    _QT_ALIGN_CENTER = QtCore.Qt.AlignCenter
-    _QT_ALIGN_HCENTER = QtCore.Qt.AlignHCenter
-    _QT_ALIGN_TOP = QtCore.Qt.AlignTop
-
-try:
-    _QT_WA_TRANSLUCENT_BACKGROUND = QtCore.Qt.WidgetAttribute.WA_TranslucentBackground
-    _QT_WA_TRANSPARENT_FOR_MOUSE_EVENTS = QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents
-    _QT_NO_BRUSH = QtCore.Qt.BrushStyle.NoBrush
-except AttributeError:
-    _QT_WA_TRANSLUCENT_BACKGROUND = QtCore.Qt.WA_TranslucentBackground
-    _QT_WA_TRANSPARENT_FOR_MOUSE_EVENTS = QtCore.Qt.WA_TransparentForMouseEvents
-    _QT_NO_BRUSH = QtCore.Qt.NoBrush
-
-try:
-    _QPAINTER_ANTIALIASING = QtGui.QPainter.RenderHint.Antialiasing
-except AttributeError:
-    _QPAINTER_ANTIALIASING = QtGui.QPainter.Antialiasing
+from .qt_compat import (
+    swallow_exc,
+    QT_ALIGN_CENTER as _QT_ALIGN_CENTER,
+    QT_ALIGN_HCENTER as _QT_ALIGN_HCENTER,
+    QT_ALIGN_TOP as _QT_ALIGN_TOP,
+    QT_WA_TRANSLUCENT_BACKGROUND as _QT_WA_TRANSLUCENT_BACKGROUND,
+    QT_WA_TRANSPARENT_FOR_MOUSE_EVENTS as _QT_WA_TRANSPARENT_FOR_MOUSE_EVENTS,
+    QT_NO_BRUSH as _QT_NO_BRUSH,
+    QPAINTER_ANTIALIASING as _QPAINTER_ANTIALIASING,
+)
 
 
 def _nice_distance_m(d: float) -> float:
@@ -73,7 +61,7 @@ def _distance_meters_between(canvas: QgsMapCanvas, p1: QgsPointXY, p2: QgsPointX
         try:
             da.setEllipsoid(QgsProject.instance().ellipsoid())
         except Exception:
-            pass
+            swallow_exc()
         try:
             return float(da.measureLine(p1, p2))
         except Exception:
@@ -86,7 +74,7 @@ def _distance_meters_between(canvas: QgsMapCanvas, p1: QgsPointXY, p2: QgsPointX
         if fac > 0.0 and math.isfinite(fac):
             return float(d_plan * fac)
     except Exception:
-        pass
+        swallow_exc()
     # Fallback: treat map units as metres (typical projected maritime CRS)
     return float(d_plan)
 
@@ -238,13 +226,13 @@ class FinalizeMapCanvasHost(QtWidgets.QWidget):
                 try:
                     sig.connect(_upd)
                 except Exception:
-                    pass
+                    swallow_exc()
         rot_sig = getattr(canvas, "rotationChanged", None)
         if rot_sig is not None and hasattr(rot_sig, "connect"):
             try:
                 rot_sig.connect(_upd)
             except Exception:
-                pass
+                swallow_exc()
 
     def resizeEvent(self, event):
         w, h = self.width(), self.height()

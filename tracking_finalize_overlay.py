@@ -10,20 +10,17 @@ from qgis.gui import QgsVertexMarker, QgsMapCanvasItem
 from qgis.PyQt import QtCore
 from qgis.PyQt.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPen
 
+from .qt_compat import (
+    swallow_exc,
+    QPAINTER_ANTIALIASING as _QPAINTER_ANTIALIASING,
+    QPAINTER_SMOOTH_PIXMAP_TRANSFORM as _QPAINTER_SMOOTH_PIXMAP_TRANSFORM,
+    VM_ICON_CIRCLE,
+)
+
 log = logging.getLogger("lookahead_planner")
 
-try:
-    _QPAINTER_ANTIALIASING = QPainter.RenderHint.Antialiasing
-    _QPAINTER_SMOOTH_PIXMAP_TRANSFORM = QPainter.RenderHint.SmoothPixmapTransform
-except AttributeError:
-    _QPAINTER_ANTIALIASING = QPainter.Antialiasing
-    _QPAINTER_SMOOTH_PIXMAP_TRANSFORM = QPainter.SmoothPixmapTransform
-
 _MARKER_ICONS = (
-    QgsVertexMarker.ICON_BOX,
-    QgsVertexMarker.ICON_CIRCLE,
-    QgsVertexMarker.ICON_CROSS,
-    getattr(QgsVertexMarker, "ICON_X", QgsVertexMarker.ICON_CROSS),
+    VM_ICON_CIRCLE,
 )
 
 _MARKER_COLORS = (
@@ -55,7 +52,7 @@ class LookaheadSvgMarker(QgsMapCanvasItem):
         try:
             self.show()
         except Exception:
-            pass
+            swallow_exc()
 
         self.px_length = self.fixed_size_px
         self.px_width = self.fixed_size_px
@@ -158,7 +155,6 @@ class LookaheadSvgMarker(QgsMapCanvasItem):
         self.renderer.render(painter, rect)
         painter.restore()
 
-
 def _posiview_qcolor(value) -> QColor:
     """Color conversion compatible with external marker-label properties."""
     if value is None:
@@ -221,7 +217,7 @@ class FinalizePosiViewNameTag(QgsMapCanvasItem):
         try:
             self.show()
         except Exception:
-            pass
+            swallow_exc()
 
     def removeFromCanvas(self):
         sc = self.scene()
@@ -311,14 +307,14 @@ def _wire_finalize_name_tag(canvas, tag: "FinalizePosiViewNameTag") -> None:
                 sig.connect(_upd)
                 connections.append((sig, _upd))
             except Exception:
-                pass
+                swallow_exc()
     rot = getattr(canvas, "rotationChanged", None)
     if rot is not None and hasattr(rot, "connect"):
         try:
             rot.connect(_upd)
             connections.append((rot, _upd))
         except Exception:
-            pass
+            swallow_exc()
     # type: ignore[attr-defined]
     tag._lookahead_name_tag_connections = connections
 
@@ -330,15 +326,15 @@ def _unwire_finalize_name_tag(tag: Optional["FinalizePosiViewNameTag"]) -> None:
         try:
             sig.disconnect(slot)
         except TypeError:
-            pass
+            swallow_exc()
     try:
         del tag._lookahead_name_tag_connections
     except AttributeError:
-        pass
+        swallow_exc()
     try:
         del tag._lookahead_name_tag_wired
     except AttributeError:
-        pass
+        swallow_exc()
 
 
 def _import_posiview_position_marker():
@@ -351,6 +347,7 @@ def _import_posiview_position_marker():
             if pm is not None:
                 return pm
         except Exception:
+            swallow_exc()
             continue
     return None
 
@@ -499,7 +496,7 @@ def _clone_marker_params(mob) -> dict:
             if str(p.get("type", "")).upper() == "SVG":
                 p["type"] = "SVG"
     except Exception:
-        pass
+        swallow_exc()
     # Avoid zero-length geometry if project/settings left length unset.
     try:
         ln = float(p.get("length", 0) or 0)
@@ -522,7 +519,7 @@ def _repair_clone_svg_renderer(pm, mob) -> None:
         if hasattr(mob.marker, "resolveSvgPath"):
             path = mob.marker.resolveSvgPath(path) or path
     except Exception:
-        pass
+        swallow_exc()
 
     if not path or not os.path.isfile(path):
         try:
@@ -530,7 +527,7 @@ def _repair_clone_svg_renderer(pm, mob) -> None:
             if isinstance(props, dict):
                 path = props.get("SvgPath", props.get("svgPath", path))
         except Exception:
-            pass
+            swallow_exc()
 
     if not path or not os.path.isfile(path):
         return
@@ -554,7 +551,7 @@ def _repair_clone_svg_renderer(pm, mob) -> None:
             if hasattr(pm, "updateSize"):
                 pm.updateSize()
     except Exception:
-        pass
+        swallow_exc()
 
 
 def _wire_position_marker(canvas, pm) -> None:
@@ -587,7 +584,7 @@ def _wire_position_marker(canvas, pm) -> None:
         try:
             _reg(ext_sig, _on_scale)
         except Exception:
-            pass
+            swallow_exc()
     if hasattr(canvas, "magnificationChanged") and hasattr(pm, "updateMapMagnification"):
         _reg(canvas.magnificationChanged, pm.updateMapMagnification)
     if hasattr(canvas, "rotationChanged"):
@@ -600,11 +597,11 @@ def _unwire_and_remove_position_marker(pm) -> None:
         try:
             sig.disconnect(slot)
         except TypeError:
-            pass
+            swallow_exc()
     try:
         del pm._lookahead_connections
     except AttributeError:
-        pass
+        swallow_exc()
     try:
         pm.removeFromCanvas()
     except Exception:
@@ -613,7 +610,7 @@ def _unwire_and_remove_position_marker(pm) -> None:
             if sc is not None:
                 sc.removeItem(pm)
         except Exception:
-            pass
+            swallow_exc()
 
 
 class PosiViewFinalizeOverlay:
@@ -635,6 +632,7 @@ class PosiViewFinalizeOverlay:
         self._tags_turn: Dict[str, FinalizePosiViewNameTag] = {}
         self._tags_cal: Dict[str, FinalizePosiViewNameTag] = {}
         self._active = False
+        self._tracking_unavailable = False
         self._PositionMarker = _import_posiview_position_marker()
 
         self._timer = QtCore.QTimer(dialog)
@@ -642,8 +640,15 @@ class PosiViewFinalizeOverlay:
         self._timer.timeout.connect(self._tick)
 
     def set_enabled(self, on: bool):
-        self._active = bool(on)
+        want = bool(on)
+        if want:
+            pv = _resolve_posiview_plugin()
+            if pv is None or not _posiview_tracking_enabled(pv):
+                want = False
+                self._tracking_unavailable = True
+        self._active = want
         if self._active:
+            self._tracking_unavailable = False
             self._timer.start()
             self._tick()
         else:
@@ -655,7 +660,7 @@ class PosiViewFinalizeOverlay:
         try:
             self._timer.timeout.disconnect(self._tick)
         except TypeError:
-            pass
+            swallow_exc()
         self._clear_markers()
 
     def _clear_markers(self):
@@ -681,7 +686,7 @@ class PosiViewFinalizeOverlay:
                 if sc is not None:
                     sc.removeItem(tag)
             except Exception:
-                pass
+                swallow_exc()
 
     def _ensure_name_tag(
         self,
@@ -720,7 +725,7 @@ class PosiViewFinalizeOverlay:
             try:
                 c.refresh()
             except Exception:
-                pass
+                swallow_exc()
 
     def _dispose_marker(self, canvas, m):
         if m is None:
@@ -733,7 +738,7 @@ class PosiViewFinalizeOverlay:
             if sc is not None:
                 sc.removeItem(m)
         except Exception:
-            pass
+            swallow_exc()
 
     def _ensure_vertex_marker(self, canvas, store: Dict[str, Any], name: str, idx: int) -> QgsVertexMarker:
         m = store.get(name)
@@ -750,11 +755,11 @@ class PosiViewFinalizeOverlay:
         try:
             vm.setZValue(240000.0)
         except Exception:
-            pass
+            swallow_exc()
         try:
             vm.setToolTip(name)
         except Exception:
-            pass
+            swallow_exc()
         store[name] = vm
         return vm
 
@@ -771,45 +776,45 @@ class PosiViewFinalizeOverlay:
 
         params = _clone_marker_params(mob)
 
-        # --- Direct SVG injection bypassing external marker clone path ---
-        try:
-            svg_path = params.get("svgPath") or params.get("SvgPath")
-            if svg_path:
-                try:
-                    rsv = getattr(getattr(mob, "marker", None),
-                                  "resolveSvgPath", None)
-                    if callable(rsv):
-                        svg_path = rsv(svg_path) or svg_path
-                except Exception:
-                    pass
-                svg_path = str(svg_path).strip() or None
-            shape_type = str(params.get("type", "")).upper()
-            if not shape_type:
-                shape_type = str(params.get("shapeType", "")).upper()
-
-            if shape_type == "SVG" and svg_path and os.path.isfile(svg_path):
-                l_m = 0.0
-                w_m = 0.0
-                try:
-                    l_m = float(params.get("shapeLength",
-                                params.get("length", 0)))
-                    w_m = float(params.get(
-                        "shapeWidth", params.get("width", 0)))
-                except (ValueError, TypeError):
-                    pass
-
-                sm = LookaheadSvgMarker(
-                    canvas, svg_path, length_m=l_m, width_m=w_m, size=params.get("size", 40))
-                sm._lookahead_sig = sig
-                try:
-                    sm.setToolTip(getattr(mob, "name", name))
-                except Exception:
-                    pass
-                store[name] = sm
-                _wire_position_marker(canvas, sm)
-                return sm
-        except Exception as e:
-            log.debug("LookaheadSvgMarker init failed: %s", e)
+        # --- Direct SVG injection disabled to force uniform low-scale markers ---
+        # try:
+        #     svg_path = params.get("svgPath") or params.get("SvgPath")
+        #     if svg_path:
+        #         try:
+        #             rsv = getattr(getattr(mob, "marker", None),
+        #                           "resolveSvgPath", None)
+        #             if callable(rsv):
+        #                 svg_path = rsv(svg_path) or svg_path
+        #         except Exception:
+        #             pass
+        #         svg_path = str(svg_path).strip() or None
+        #     shape_type = str(params.get("type", "")).upper()
+        #     if not shape_type:
+        #         shape_type = str(params.get("shapeType", "")).upper()
+        #
+        #     if shape_type == "SVG" and svg_path and os.path.isfile(svg_path):
+        #         l_m = 0.0
+        #         w_m = 0.0
+        #         try:
+        #             l_m = float(params.get("shapeLength",
+        #                         params.get("length", 0)))
+        #             w_m = float(params.get(
+        #                 "shapeWidth", params.get("width", 0)))
+        #         except (ValueError, TypeError):
+        #             pass
+        #
+        #         sm = LookaheadSvgMarker(
+        #             canvas, svg_path, length_m=l_m, width_m=w_m, size=params.get("size", 40))
+        #         sm._lookahead_sig = sig
+        #         try:
+        #             sm.setToolTip(getattr(mob, "name", name))
+        #         except Exception:
+        #             pass
+        #         store[name] = sm
+        #         _wire_position_marker(canvas, sm)
+        #         return sm
+        # except Exception as e:
+        #     log.debug("LookaheadSvgMarker init failed: %s", e)
 
         # Do not clone external PositionMarker on non-primary canvases.
         # This avoids trail artifacts and renderer crashes.
@@ -825,7 +830,7 @@ class PosiViewFinalizeOverlay:
                 if h is not None and float(h) > -9000.0:
                     pm.setHeading(float(h))
             except (TypeError, ValueError):
-                pass
+                swallow_exc()
             return
 
         try:
@@ -839,13 +844,23 @@ class PosiViewFinalizeOverlay:
             return
         pv = _resolve_posiview_plugin()
         if pv is None or not _posiview_tracking_enabled(pv):
-            self._clear_markers()
+            if not self._tracking_unavailable:
+                self._clear_markers()
+                self._tracking_unavailable = True
+            self._active = False
+            self._timer.stop()
             return
+
+        self._tracking_unavailable = False
 
         try:
             mobiles = getattr(pv.project, "mobileItems", None) or {}
         except Exception:
-            self._clear_markers()
+            if not self._tracking_unavailable:
+                self._clear_markers()
+                self._tracking_unavailable = True
+            self._active = False
+            self._timer.stop()
             return
 
         # MobileItem.coordinates are in main iface.mapCanvas() CRS, not WGS84 (mob.crs is unset).
@@ -868,7 +883,7 @@ class PosiViewFinalizeOverlay:
                     if "compass" in svg_path or "rose" in svg_path:
                         continue
                 except Exception:
-                    pass
+                    swallow_exc()
 
                 xy = getattr(mob, "coordinates", None)
                 if xy is None:
@@ -877,10 +892,12 @@ class PosiViewFinalizeOverlay:
                 if abs(xy.x()) < 1e-6 and abs(xy.y()) < 1e-6:
                     continue
             except Exception:
+                swallow_exc()
                 continue
             active_names.append((str(name), mob))
 
         names_set = {n for n, _ in active_names}
+        changed = False
 
         for store, canvas, tags in (
             (self._markers_turn, self._turn, self._tags_turn),
@@ -889,14 +906,17 @@ class PosiViewFinalizeOverlay:
             for n in list(store.keys()):
                 if n not in names_set:
                     self._dispose_marker(canvas, store.pop(n, None))
+                    changed = True
             for n in list(tags.keys()):
                 if n not in names_set:
                     self._dispose_name_tag(tags.pop(n, None))
+                    changed = True
 
         for mi_idx, (name, mob) in enumerate(active_names):
             try:
                 src_xy = getattr(mob, "coordinates", None)
             except Exception:
+                swallow_exc()
                 continue
             if src_xy is None:
                 continue
@@ -918,9 +938,14 @@ class PosiViewFinalizeOverlay:
                             pm.hide()
                     self._ensure_name_tag(canvas, tags_store, name, None, None)
                     continue
+                prev_pm = store.get(name)
                 pm = self._ensure_canvas_marker(
                     canvas, store, name, mob, mi_idx)
+                if pm is not prev_pm:
+                    changed = True
                 self._apply_position(pm, xy, mob)
                 self._ensure_name_tag(canvas, tags_store, name, xy, mob)
+                changed = True
 
-        self._refresh_finalize_canvases()
+        if changed:
+            self._refresh_finalize_canvases()

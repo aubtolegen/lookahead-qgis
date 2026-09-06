@@ -1,5 +1,5 @@
 import math
-import random
+import secrets
 from typing import Tuple, Optional
 from qgis.core import (
     QgsPointXY,
@@ -9,6 +9,17 @@ from qgis.core import (
 
 # Import dubins_path module using relative import for QGIS plugin structure
 from . import dubins_path
+from .qt_compat import WKB_LINE_GEOMETRY
+
+
+def _rand():
+    """Unit interval sample for RRT (not cryptographic)."""
+    return secrets.randbits(53) / 9007199254740992.0
+
+
+def _uniform(lo, hi):
+    return lo + (hi - lo) * _rand()
+
 
 # --- Constants (can be adjusted or passed as parameters) ---
 # How far to extend the tree in one step (meters) - increased for larger survey areas
@@ -365,15 +376,15 @@ def find_rrt_path(start_pose: tuple[float, float, float],
     # --- RRT Main Loop ---
     for iteration in range(max_iterations):
         # 1. Sample State
-        if random.random() < goal_bias:
+        if _rand() < goal_bias:
             # Sample goal state directly
             sampled_state = end_pose
         else:
             # Sample random state within bounds (if provided)
             if search_bounds:
                 min_x, max_x, min_y, max_y = search_bounds
-                rand_x = random.uniform(min_x, max_x)
-                rand_y = random.uniform(min_y, max_y)
+                rand_x = _uniform(min_x, max_x)
+                rand_y = _uniform(min_y, max_y)
             else:
                 # Heuristic: Sample somewhat around start/end points if no bounds
                 # This needs improvement for robust unbounded sampling
@@ -383,17 +394,17 @@ def find_rrt_path(start_pose: tuple[float, float, float],
                     abs(start_pose[0] - end_pose[0]),  # Heuristic range
                     abs(start_pose[1] - end_pose[1]),
                 ) * 2 + 100
-                rand_x = random.uniform(
+                rand_x = _uniform(
                     sample_center_x - sample_range / 2,
                     sample_center_x + sample_range / 2,
                 )
-                rand_y = random.uniform(
+                rand_y = _uniform(
                     sample_center_y - sample_range / 2,
                     sample_center_y + sample_range / 2,
                 )
 
             # Sample random heading (or keep it simple: use heading towards goal?)
-            rand_heading = random.uniform(-math.pi, math.pi)
+            rand_heading = _uniform(-math.pi, math.pi)
             sampled_state = (rand_x, rand_y, rand_heading)
 
         # 2. Find Nearest Node in tree
@@ -487,7 +498,7 @@ def find_rrt_path(start_pose: tuple[float, float, float],
                         if path_geometries:
                             # Process all path segments
                             for i, geom in enumerate(path_geometries):
-                                if geom.type() == QgsWkbTypes.LineGeometry:
+                                if geom.type() == WKB_LINE_GEOMETRY:
                                     vertices = list(geom.vertices())
                                     if i == 0:
                                         # Convert QgsPoint to QgsPointXY for all vertices
@@ -530,14 +541,14 @@ def find_rrt_path(start_pose: tuple[float, float, float],
                 all_vertices = []
                 if path_geometries:
                     # Add vertices from the first segment
-                    if path_geometries[0].type() == QgsWkbTypes.LineGeometry:
+                    if path_geometries[0].type() == WKB_LINE_GEOMETRY:
                         vertices = list(path_geometries[0].vertices())
                         # Convert QgsPoint to QgsPointXY
                         all_vertices.extend(
                             [QgsPointXY(v.x(), v.y()) for v in vertices])
                     # Add vertices from subsequent segments (skip first vertex of each)
                     for geom in path_geometries[1:]:
-                        if geom.type() == QgsWkbTypes.LineGeometry:
+                        if geom.type() == WKB_LINE_GEOMETRY:
                             vertices = list(geom.vertices())
                             if len(vertices) > 1:
                                 # Convert QgsPoint to QgsPointXY

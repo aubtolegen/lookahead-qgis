@@ -1,14 +1,10 @@
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QApplication
 from .lookahead_dockwidget_impl import LookaheadDockWidgetImpl, shutdown_obn_logging
+from .qt_compat import swallow_exc, QT_RIGHT_DOCK_AREA as _QT_RIGHT_DOCK_AREA
 import os
 import shutil
-
-try:
-    _QT_RIGHT_DOCK_AREA = Qt.DockWidgetArea.RightDockWidgetArea
-except AttributeError:
-    _QT_RIGHT_DOCK_AREA = Qt.RightDockWidgetArea
 
 
 class LookaheadPlanner:
@@ -29,12 +25,12 @@ class LookaheadPlanner:
                             shutil.rmtree(cache_dir, ignore_errors=True)
                             removed += 1
                         except Exception:
-                            pass
+                            swallow_exc()
             print(f"[Lookahead] plugin path: {plugin_dir}")
             if removed:
                 print(f"[Lookahead] cleared __pycache__ dirs: {removed}")
         except Exception:
-            pass
+            swallow_exc()
 
     def __init__(self, iface):
         """Constructor.
@@ -207,15 +203,15 @@ class LookaheadPlanner:
                 if hasattr(self.dockwidget, "_save_dock_settings"):
                     self.dockwidget._save_dock_settings()
             except Exception:
-                pass
+                swallow_exc()
             try:
                 self.iface.removeDockWidget(self.dockwidget)
             except Exception:
-                pass
+                swallow_exc()
             try:
                 self.dockwidget.deleteLater()
             except Exception:
-                pass
+                swallow_exc()
             self.dockwidget = None
             # Let Qt destroy the dock before closing file handlers (helps Windows unlock plugin files).
             app = QApplication.instance()
@@ -246,7 +242,7 @@ class LookaheadPlanner:
             try:
                 self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
             except Exception:
-                pass
+                swallow_exc()
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
 
             # show the dockwidget
